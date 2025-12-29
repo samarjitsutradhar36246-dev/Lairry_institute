@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* ---- THEME VARIABLES (THIS REPLACES tailwind.config.js) ---- */
+@layer theme {
+  :root {
+    --color-primary: #7f13ec;
+    --color-background-dark: #141118;
+    --color-surface-dark: #1e1926;
+    --color-surface-darker: #191520;
+    --color-border-dark: #302839;
+    --color-muted: #ab9db9;
+  }
+}
+
+/* ---- BASE STYLES ---- */
+@layer base {
+  html,
+  body {
+    background-color: var(--color-background-dark);
+    color: white;
+    font-family: "Space Grotesk", "Noto Sans", sans-serif;
+  }
+}

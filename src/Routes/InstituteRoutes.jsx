@@ -1,5 +1,6 @@
 // routes/InstituteRoutes.js
 import { Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
 
 // Login & OTP
 import LairryInstituteLogin from "../pages/Login/LoginAndStatusgate1";
@@ -47,6 +48,7 @@ export default function InstituteRoutes() {
       <Route path="/onboarding/submission-confirmation" element={<SubmissionConfirmation />} />
 
       {/* Dashboard Layout Routes */}
+      <Route element={<ProtectedRoute />}>
       <Route path="/institute" element={<DashboardLayout />}>
         <Route index element={<DashBoard />} />
         <Route path="exams" element={<Exams />} />
@@ -57,6 +59,7 @@ export default function InstituteRoutes() {
         <Route path="settings" element={<SettingsSecurity />} />
         <Route path="institute-admin-profile" element={<InstituteAdminProfile />} />
         
+      </Route>
       </Route>
 
       {/* Catch-all for 404 */}

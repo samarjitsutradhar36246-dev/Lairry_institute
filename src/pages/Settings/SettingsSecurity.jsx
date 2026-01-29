@@ -24,6 +24,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import DevicesIcon from "@mui/icons-material/Devices";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useNavigate } from "react-router-dom";
 
 /* ------------------------------------------------------------------ */
 /* Fonts (load once globally in your app root ideally) */
@@ -76,6 +77,12 @@ const GlassInput = styled(TextField)(() => ({
 /* ------------------------------------------------------------------ */
 
 export default function SettingsSecurity() {
+    const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth"); // remove login flag
+    navigate("/"); // redirect to login page
+  };
   return (
     <Box
       sx={{
@@ -395,6 +402,7 @@ export default function SettingsSecurity() {
                   Sign out of all devices
                 </Button>
                 <Button
+                onClick={handleLogout}
                   fullWidth
                   startIcon={<PowerSettingsNewIcon />}
                   sx={{

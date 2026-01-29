@@ -1,12 +1,21 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
+import { useInstituteSupabase } from "../supabase/InstituteSupabaseProvider";
 
 export default function ProtectedRoute() {
-  const isAuth = localStorage.getItem("auth") === "true";
+  const { session, loading } = useInstituteSupabase();
+  // console.log("AUTH CHECK:", session);
 
-  if (!isAuth) {
-    return <Navigate to="/" replace />;
+  // Still checking auth state
+  if (loading) {
+    return null; // or a loader/spinner
   }
 
-  return <Outlet />; // Render dashboard pages inside this
+  // Not logged in
+  if (!session) {
+    return <Navigate to="/institutes-login" replace />;
+  }
+
+  // Logged in → allow access
+  return <Outlet />;
 }

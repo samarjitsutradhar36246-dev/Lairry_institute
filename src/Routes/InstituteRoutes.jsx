@@ -26,6 +26,8 @@ import StudentManagement from "../pages/Students/StudentManagement";
 import SalesRevenue from "../pages/Finance/SalesRevenue";
 import SettingsSecurity from "../pages/Settings/SettingsSecurity";
 import InstituteAdminProfile from "../pages/InstituteAdminProfile";
+import InstitutesLogin from "../pages/Authentication/InstituteLogin";
+import InstituteSignup from "../pages/Authentication/InstituteSignup";
 
 // Public
 // import NotFound from "../pages/public/NotFound";
@@ -34,11 +36,13 @@ export default function InstituteRoutes() {
   return (
     <Routes>
       {/* Login & OTP */}
-      <Route path="/" element={<LairryInstituteLogin />} />
+      <Route path="/institutes-login" element={<InstitutesLogin />} />
+      <Route path="/institutes-signup" element={<InstituteSignup />} />
+      {/* <Route path="/" element={<LairryInstituteLogin />} />
       <Route path="/otp-verification" element={<LairryOTPVerification />} />
       <Route path="/login-status" element={<LoginAndStatusgate3 />} />
       <Route path="/login-approved" element={<LoginStatusApproved />} />
-      <Route path="/login-rejected" element={<LoginRejected />} />
+      <Route path="/login-rejected" element={<LoginRejected />} /> */}
 
       {/* Onboarding */}
       <Route path="/onboarding/institute-details" element={<InstituteDetails1 />} />

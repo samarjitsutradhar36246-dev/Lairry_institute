@@ -3,21 +3,14 @@ import {
   Box,
   Typography,
   Card,
-  CardContent,
   Grid,
   Stack,
   Avatar,
-  Divider,
-  IconButton,
   Button,
+  CircularProgress,
 } from "@mui/material";
-import {
-  Edit,
-  Email,
-  Phone,
-  LocationOn,
-  School,
-} from "@mui/icons-material";
+import { Edit, Email, Phone, LocationOn, School } from "@mui/icons-material";
+import { useInstituteSupabase } from "../supabase/InstituteSupabaseProvider";
 
 /* ---------------- GLASS CARD ---------------- */
 const GlassCard = ({ children, sx }) => (
@@ -37,6 +30,41 @@ const GlassCard = ({ children, sx }) => (
 
 /* ---------------- INSTITUTE ADMIN PROFILE ---------------- */
 export default function InstituteAdminProfile() {
+  const { user, loading } = useInstituteSupabase();
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#050a10",
+        }}
+      >
+        <CircularProgress color="primary" />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white",
+          background: "#050a10",
+        }}
+      >
+        No institute data found.
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -53,17 +81,17 @@ export default function InstituteAdminProfile() {
           <Stack direction={{ xs: "column", sm: "row" }} spacing={3} alignItems="center">
             <Avatar
               sx={{ width: 96, height: 96 }}
-              src="https://images.unsplash.com/photo-1603415526960-f7e0328ee9b2?auto=format&fit=crop&w=400&q=80"
+              src={user.avatar_url || "https://images.unsplash.com/photo-1603415526960-f7e0328ee9b2?auto=format&fit=crop&w=400&q=80"}
             />
             <Box flex={1}>
               <Typography fontSize={24} fontWeight={700} color="white">
-                Dr. Ananya Sharma
+                {user.contact_person_name || "Admin Name"}
               </Typography>
               <Typography fontSize={14} color="#94a3b8" mt={0.5}>
-                Institute Administrator
+                {user.contact_person_designation || "Institute Administrator"}
               </Typography>
               <Typography fontSize={12} color="#94a3b8" mt={0.5}>
-                IIT Delhi
+                {user.institute_display_name || user.institute_name || "Institute Name"}
               </Typography>
             </Box>
             <Button
@@ -83,46 +111,82 @@ export default function InstituteAdminProfile() {
 
         {/* ---------------- BASIC INFO ---------------- */}
         <Grid container spacing={3}>
+          {/* Contact Info */}
           <Grid item xs={12} md={6}>
             <GlassCard sx={{ p: 3 }}>
               <Typography fontSize={18} fontWeight={700} color="white" mb={2}>
                 Contact Information
               </Typography>
               <Stack spacing={2}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Email sx={{ color: "#22d3ee" }} />
-                  <Typography color="#e5e7eb">ananya.sharma@iitd.ac.in</Typography>
-                </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Phone sx={{ color: "#22d3ee" }} />
-                  <Typography color="#e5e7eb">+91 9876543210</Typography>
-                </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <LocationOn sx={{ color: "#22d3ee" }} />
-                  <Typography color="#e5e7eb">Hauz Khas, Delhi, India</Typography>
-                </Stack>
+                {user.institute_email && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Email sx={{ color: "#22d3ee" }} />
+                    <Typography color="#e5e7eb">{user.institute_email}</Typography>
+                  </Stack>
+                )}
+                {user.contact_phone && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Phone sx={{ color: "#22d3ee" }} />
+                    <Typography color="#e5e7eb">{user.contact_phone}</Typography>
+                  </Stack>
+                )}
+                {user.contact_phone_alt && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Phone sx={{ color: "#22d3ee" }} />
+                    <Typography color="#e5e7eb">{user.contact_phone_alt}</Typography>
+                  </Stack>
+                )}
+                {user.support_email && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Email sx={{ color: "#22d3ee" }} />
+                    <Typography color="#e5e7eb">{user.support_email}</Typography>
+                  </Stack>
+                )}
+                {user.location_city && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <LocationOn sx={{ color: "#22d3ee" }} />
+                    <Typography color="#e5e7eb">
+                      {user.location_city}, {user.location_state}, {user.location_country} {user.location_pin}
+                    </Typography>
+                  </Stack>
+                )}
               </Stack>
             </GlassCard>
           </Grid>
 
+          {/* Institute Details */}
           <Grid item xs={12} md={6}>
             <GlassCard sx={{ p: 3 }}>
               <Typography fontSize={18} fontWeight={700} color="white" mb={2}>
                 Institute Details
               </Typography>
               <Stack spacing={2}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <School sx={{ color: "#a855f7" }} />
-                  <Typography color="#e5e7eb">IIT Delhi</Typography>
-                </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography color="#94a3b8">Established:</Typography>
-                  <Typography color="#e5e7eb">1961</Typography>
-                </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography color="#94a3b8">Students:</Typography>
-                  <Typography color="#e5e7eb">11,500+</Typography>
-                </Stack>
+                {user.institute_name && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <School sx={{ color: "#a855f7" }} />
+                    <Typography color="#e5e7eb">{user.institute_name}</Typography>
+                  </Stack>
+                )}
+                {user.institute_type && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography color="#94a3b8">Type:</Typography>
+                    <Typography color="#e5e7eb">{user.institute_type}</Typography>
+                  </Stack>
+                )}
+                {user.account_status && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography color="#94a3b8">Status:</Typography>
+                    <Typography color="#e5e7eb">{user.account_status}</Typography>
+                  </Stack>
+                )}
+                {user.latitude && user.longitude && (
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography color="#94a3b8">Coordinates:</Typography>
+                    <Typography color="#e5e7eb">
+                      {user.latitude}, {user.longitude}
+                    </Typography>
+                  </Stack>
+                )}
               </Stack>
             </GlassCard>
           </Grid>
@@ -134,10 +198,9 @@ export default function InstituteAdminProfile() {
             About
           </Typography>
           <Typography color="#94a3b8" fontSize={14}>
-            Dr. Ananya Sharma has been serving as the Institute Administrator at IIT Delhi
-            for 5 years. She oversees all academic and administrative operations,
-            ensures the institute’s policies are implemented efficiently, and manages
-            collaborations with research and educational partners globally.
+            {user.contact_person_name
+              ? `${user.contact_person_name} serves as the ${user.contact_person_designation || "Administrator"} at ${user.institute_display_name || user.institute_name}.`
+              : "No bio available."}
           </Typography>
         </GlassCard>
 

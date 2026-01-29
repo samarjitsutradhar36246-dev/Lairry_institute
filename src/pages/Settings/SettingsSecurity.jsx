@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import {
   Box,
   Typography,
@@ -25,6 +26,8 @@ import DevicesIcon from "@mui/icons-material/Devices";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useNavigate } from "react-router-dom";
+import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider";
+
 
 /* ------------------------------------------------------------------ */
 /* Fonts (load once globally in your app root ideally) */
@@ -77,12 +80,18 @@ const GlassInput = styled(TextField)(() => ({
 /* ------------------------------------------------------------------ */
 
 export default function SettingsSecurity() {
+  const { logoutUser } = useInstituteSupabase();
     const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth"); // remove login flag
-    navigate("/"); // redirect to login page
-  };
+
+const handleLogout = async () => {
+  try {
+    await logoutUser();
+    navigate("/institutes-login");
+  } catch (err) {
+    console.error("Logout failed", err);
+  }
+};
   return (
     <Box
       sx={{
@@ -244,7 +253,7 @@ export default function SettingsSecurity() {
             <GlassCard sx={{ p: 3 }}>
               <Stack direction="row" spacing={1.5} mb={3}>
                 <NotificationsActiveIcon sx={{ color: "#7b25f4" }} />
-                <Typography fontWeight={700}>
+                <Typography fontWeight={700} >
                   Notification Preferences
                 </Typography>
               </Stack>
@@ -377,7 +386,7 @@ export default function SettingsSecurity() {
             >
               <Stack direction="row" spacing={1.5} mb={2}>
                 <DevicesIcon sx={{ color: "#f87171" }} />
-                <Typography fontWeight={700}>Session Management</Typography>
+                <Typography fontWeight={700} sx={{color:"white"}}>Session Management</Typography>
               </Stack>
 
               <Typography

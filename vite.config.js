@@ -11,4 +11,8 @@ export default defineConfig({
       },
     }),
   ],
+    server: {
+    host: true,    // optional: allows LAN access
+    port: 3000,    // change this to your desired port
+  },
 })

@@ -358,7 +358,7 @@ function StyledInput(props) {
   );
 }
 
-function SelectField({ label, options, }) {
+function SelectField({ label, options }) {
   return (
     <Box>
       <Typography fontSize={14} color="#cbd5f5" mb={1}>
@@ -383,11 +383,14 @@ function SelectField({ label, options, }) {
   );
 }
 
+// ✅ FIXED: Typography cannot contain <div> (for Chip)
 function SummaryRow({ label, value }) {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center">
       <Typography color="#94a3b8">{label}</Typography>
-      <Typography fontWeight={600}>{value}</Typography>
+      <Typography component="div" fontWeight={600}>
+        {value}
+      </Typography>
     </Box>
   );
 }

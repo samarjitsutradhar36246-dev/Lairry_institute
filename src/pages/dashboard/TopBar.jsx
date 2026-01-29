@@ -12,8 +12,10 @@ import {
   NotificationsNone,
   LightModeOutlined,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const TopBar = () => {
+  const navigate=useNavigate();
   return (
     <Box
       sx={{
@@ -88,17 +90,22 @@ const TopBar = () => {
         </IconButton>
 
         {/* Profile */}
+        <IconButton onClick={()=>navigate("/institute/institute-admin-profile")}>
         <Avatar
+        
           sx={{
             width: 34,
             height: 34,
             bgcolor: "#137fec",
             fontSize: 14,
             fontWeight: 600,
+            
           }}
+          
         >
           A
         </Avatar>
+        </IconButton>
       </Stack>
     </Box>
   );

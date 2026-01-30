@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "../../supabase/SupabaseClient";
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  Grid,
+  Stack,
   Chip,
   Button,
   Table,
@@ -12,23 +13,13 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  LinearProgress,
-  Stack,
   IconButton,
   TextField,
   MenuItem,
 } from "@mui/material";
-import {
-  Science,
-  Calculate,
-  Psychology,
-  HistoryEdu,
-  Visibility,
-  Download,
-  RocketLaunch,
-  PlayCircleOutline,
-} from "@mui/icons-material";
+import { Visibility, Download, RocketLaunch, Science } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider";
 
 /* ---------------- GLASS CARD ---------------- */
 const GlassCard = ({ children, sx }) => (
@@ -46,65 +37,63 @@ const GlassCard = ({ children, sx }) => (
   </Card>
 );
 
-/* ---------------- DUMMY EXAMS ---------------- */
-const dummyExams = [
-  {
-    id: 1,
-    icon: <Science />,
-    name: "JEE Advanced Mock 4",
-    batch: "Batch A, B",
-    date: "Oct 24, 2023",
-    duration: "3h",
-    marks: 360,
-    students: 50,
-    status: "Live",
-    color: "#22c55e",
-  },
-  {
-    id: 2,
-    icon: <Calculate />,
-    name: "Class 12 Math Term 1",
-    batch: "Batch C",
-    date: "Oct 22, 2023",
-    duration: "2h",
-    marks: 100,
-    students: 40,
-    status: "Completed",
-    color: "#64748b",
-  },
-  {
-    id: 3,
-    icon: <Psychology />,
-    name: "AI Aptitude Test",
-    batch: "All Batches",
-    date: "Oct 20, 2023",
-    duration: "1.5h",
-    marks: 50,
-    students: 60,
-    status: "Completed",
-    color: "#64748b",
-  },
-  {
-    id: 4,
-    icon: <HistoryEdu />,
-    name: "History Weekly Quiz",
-    batch: "Batch A",
-    date: "Oct 18, 2023",
-    duration: "1h",
-    marks: 30,
-    students: 20,
-    status: "Completed",
-    color: "#64748b",
-  },
-];
-
-/* ---------------- EXAMS PAGE ---------------- */
 export default function Exams() {
   const navigate = useNavigate();
-  const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState("All");
+  const { user } = useInstituteSupabase(); // logged-in institute
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [exams, setExams] = useState([]);
 
-  const filteredExams = dummyExams.filter(
+  /* ---------------- FETCH EXAMS ---------------- */
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchExams = async () => {
+      try {
+        // Step 1: Get institute data (to get exam IDs)
+        const { data: instData, error: instError } = await supabase
+          .from("institutes_data")
+          .select("institute_id, exam_ids")
+          .eq("institute_id", user.auth_user_id)
+          .maybeSingle();
+
+        if (instError) throw instError;
+        if (!instData || !instData.exam_ids?.length) {
+          setExams([]);
+          return;
+        }
+
+        // Step 2: Fetch exams from institute_exams_data using exam_ids
+        const { data: examsData, error: examsError } = await supabase
+          .from("institute_exams_data")
+          .select("id, exam_title, exam_category, duration_minutes")
+          .in("id", instData.exam_ids);
+
+        if (examsError) throw examsError;
+
+        const mappedExams = examsData.map((exam) => ({
+          id: exam.id,
+          name: exam.exam_title,
+          category: exam.exam_category,
+          duration: `${exam.duration_minutes} min`,
+          marks: 0,
+          // batch: exam.batch_name || "N/A",
+          status: exam.status || "Live",
+          color: exam.status === "Live" ? "#22c55e" : "#64748b",
+          icon: <Science />,
+        }));
+
+        setExams(mappedExams);
+      } catch (err) {
+        console.error("Error fetching exams:", err);
+      }
+    };
+
+    fetchExams();
+  }, [user]);
+
+  /* ---------------- FILTERED EXAMS ---------------- */
+  const filteredExams = exams.filter(
     (exam) =>
       exam.name.toLowerCase().includes(search.toLowerCase()) &&
       (statusFilter === "All" || exam.status === statusFilter)
@@ -122,7 +111,12 @@ export default function Exams() {
     >
       <Box maxWidth="1400px" mx="auto" display="flex" flexDirection="column" gap={3}>
         {/* ---------------- HEADER ---------------- */}
-        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="center" spacing={2}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={2}
+        >
           <Box>
             <Typography variant="h4" fontWeight={700} color="white">
               Exams Overview
@@ -149,7 +143,14 @@ export default function Exams() {
             variant="filled"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{ bgcolor: "#0f1520", borderRadius: 1, input: { color: "white" } }}
+              sx={{
+    bgcolor: "#0f1520",
+    borderRadius: 1,
+    "& .MuiInputLabel-root": { color: "#94a3b8" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#fff" },
+    "& .MuiFilledInput-input": { color: "#fff" },
+  }}
+
           />
           <TextField
             size="small"
@@ -158,8 +159,14 @@ export default function Exams() {
             variant="filled"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ bgcolor: "#0f1520", borderRadius: 1, input: { color: "white" } }}
-          >
+  sx={{
+    bgcolor: "#0f1520",
+    borderRadius: 1,
+    "& .MuiInputLabel-root": { color: "#94a3b8" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#fff" },
+    "& .MuiFilledInput-input": { color: "#fff" },
+  }}
+        >
             {["All", "Live", "Completed"].map((s) => (
               <MenuItem key={s} value={s}>
                 {s}
@@ -180,14 +187,21 @@ export default function Exams() {
               <Table sx={{ minWidth: 700 }}>
                 <TableHead>
                   <TableRow>
-                    {["Exam Name", "Batch", "Date", "Duration", "Marks", "Students", "Status", "Action"].map((h) => (
-                      <TableCell
-                        key={h}
-                        sx={{ color: "#94a3b8", textTransform: "uppercase", fontSize: 12, fontWeight: 600 }}
-                      >
-                        {h}
-                      </TableCell>
-                    ))}
+                    {["Exam Name", "Category", "Duration", "Marks", "Status", "Action"].map(
+                      (h) => (
+                        <TableCell
+                          key={h}
+                          sx={{
+                            color: "#94a3b8",
+                            textTransform: "uppercase",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {h}
+                        </TableCell>
+                      )
+                    )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -216,11 +230,9 @@ export default function Exams() {
                           </Box>
                         </Stack>
                       </TableCell>
-                      <TableCell sx={{ color: "#94a3b8" }}>{exam.batch}</TableCell>
-                      <TableCell sx={{ color: "#94a3b8" }}>{exam.date}</TableCell>
+                      <TableCell sx={{ color: "#94a3b8" }}>{exam.category}</TableCell>
                       <TableCell sx={{ color: "#94a3b8" }}>{exam.duration}</TableCell>
                       <TableCell sx={{ color: "#94a3b8" }}>{exam.marks}</TableCell>
-                      <TableCell sx={{ color: "#94a3b8" }}>{exam.students}</TableCell>
                       <TableCell>
                         <Chip
                           label={exam.status}
@@ -241,7 +253,7 @@ export default function Exams() {
                   ))}
                   {filteredExams.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} sx={{ color: "#94a3b8", textAlign: "center" }}>
+                      <TableCell colSpan={6} sx={{ color: "#94a3b8", textAlign: "center" }}>
                         No exams found
                       </TableCell>
                     </TableRow>

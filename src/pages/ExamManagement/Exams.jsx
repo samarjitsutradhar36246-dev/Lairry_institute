@@ -113,7 +113,7 @@ export default function Exams() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "90vh",
         background:
           "radial-gradient(circle at top left, rgba(19,127,236,0.15), transparent 40%), radial-gradient(circle at bottom right, rgba(168,85,247,0.15), transparent 40%), #050a10",
         px: { xs: 2, md: 4 },

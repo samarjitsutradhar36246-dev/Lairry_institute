@@ -31,6 +31,7 @@ import {
   CheckCircle,
   PlayCircleOutline,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 /* ---------------- GLASS CARD ---------------- */
 const GlassCard = ({ children, sx }) => (
@@ -49,7 +50,8 @@ const GlassCard = ({ children, sx }) => (
 );
 
 /* ---------------- DASHBOARD ---------------- */
-export default function DashBoard2() {
+export default function DashBoard() {
+  const navigate = useNavigate()
   return (
     <Box
       sx={{
@@ -339,7 +341,7 @@ export default function DashBoard2() {
               </Typography>
 
               <GlassCard sx={{ p: 3, cursor: "pointer", transition: "all 0.2s", "&:hover": { borderColor: "rgba(19,127,236,0.3)" } }}>
-                <Stack direction="row" spacing={2} alignItems="center">
+                <Stack direction="row" spacing={2} alignItems="center" onClick={()=>navigate("/institute/exams/create")}>
                   <Box
                     sx={{
                       width: 48,
@@ -355,7 +357,7 @@ export default function DashBoard2() {
                   >
                     <RocketLaunch />
                   </Box>
-                  <Box flex={1}>
+                  <Box flex={1} >
                     <Typography color="white" fontWeight={700} fontSize={15}>
                       Launch New Exam
                     </Typography>

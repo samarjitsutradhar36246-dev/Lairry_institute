@@ -7,6 +7,7 @@ import {
   MenuItem,
   Chip,
   Divider,
+  InputAdornment,
 } from "@mui/material";
 
 import EditDocumentIcon from "@mui/icons-material/EditDocument";
@@ -71,8 +72,8 @@ export default function CreateExam() {
             </Box>
 
             <Typography color="#94a3b8" maxWidth={640} mt={1}>
-              Configure the essential details for your upcoming examination.
-              Advanced question management is handled via Excel upload.
+              Configure the essential details for your upcoming examination. Advanced question
+              management is handled via Excel upload.
             </Typography>
           </Box>
 
@@ -82,6 +83,7 @@ export default function CreateExam() {
               sx={{
                 px: 3,
                 borderRadius: 2,
+                height:"50%",
                 border: "1px solid #475569",
                 color: "#cbd5f5",
                 "&:hover": { bgcolor: "#1e293b" },
@@ -95,6 +97,8 @@ export default function CreateExam() {
               sx={{
                 px: 3,
                 borderRadius: 2,
+                color:"white",
+                height:"50%",
                 bgcolor: "#137fec",
                 fontWeight: 700,
                 boxShadow: "0 0 25px rgba(19,127,236,0.45)",
@@ -128,8 +132,15 @@ export default function CreateExam() {
               </Field>
 
               <TwoCol>
-                <SelectField label="Category" options={["Select Exam Stream", "Engineering (JEE)", "Medical (NEET)", "Banking & SSC"]} />
-                <SelectField label="Language" icon={<TranslateIcon />} options={["English", "Hindi", "Marathi", "Tamil"]} />
+                <SelectField
+                  label="Category"
+                  options={["Select Exam Stream", "Engineering (JEE)", "Medical (NEET)", "Banking & SSC"]}
+                />
+                <SelectField
+                  label="Language"
+                  icon={<TranslateIcon />}
+                  options={["English", "Hindi", "Marathi", "Tamil"]}
+                />
               </TwoCol>
 
               <TwoCol>
@@ -326,51 +337,93 @@ function TwoCol({ children }) {
   );
 }
 
-function Field({ label, children, icon, prefix }) {
+function Field({ label, children }) {
   return (
     <Box>
       <Typography fontSize={14} color="#cbd5f5" mb={1}>
         {label}
       </Typography>
-      <Box position="relative">
-        {icon && <Box sx={{ position: "absolute", left: 12, top: 14, color: "#64748b" }}>{icon}</Box>}
-        {prefix && <Box sx={{ position: "absolute", left: 14, top: 14, color: "#64748b" }}>{prefix}</Box>}
-        {children}
-      </Box>
+      {children}
     </Box>
   );
 }
 
-function StyledInput(props) {
+function StyledInput({ icon, prefix, ...props }) {
   return (
     <TextField
       fullWidth
       {...props}
-      InputProps={{
-        sx: {
-          bgcolor: "#0f172a",
-          borderRadius: 2,
-          color: "#fff",
-          pl: 4,
+      slotProps={{
+        input: {
+          sx: {
+            bgcolor: "#0f172a",
+            borderRadius: 2,
+            color: "#fff",
+            paddingLeft: icon || prefix ? 0 : 2,
+          },
         },
+        root: {
+          sx: {
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: "rgba(255,255,255,0.12)",
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "rgba(19,127,236,0.6)",
+            },
+          },
+        },
+        startAdornment: (
+          <>
+            {icon && (
+              <InputAdornment position="start" sx={{ color: "#64748b" }}>
+                {icon}
+              </InputAdornment>
+            )}
+            {prefix && (
+              <InputAdornment position="start" sx={{ color: "#64748b" }}>
+                {prefix}
+              </InputAdornment>
+            )}
+          </>
+        ),
       }}
     />
   );
 }
 
-function SelectField({ label, options }) {
+function SelectField({ label, options, icon }) {
   return (
     <Box>
       <Typography fontSize={14} color="#cbd5f5" mb={1}>
         {label}
       </Typography>
+
       <TextField
         select
         fullWidth
         defaultValue={options[0]}
-        InputProps={{
-          endAdornment: <ExpandMoreIcon sx={{ color: "#64748b" }} />,
-          sx: { bgcolor: "#0f172a", borderRadius: 2 },
+        slotProps={{
+          input: {
+            sx: {
+              bgcolor: "#0f172a",
+              borderRadius: 2,
+              color: "#fff",
+              paddingLeft: icon ? 0 : 2,
+            },
+          },
+          root: {
+            sx: {
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(255,255,255,0.12)",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(19,127,236,0.6)",
+              },
+            },
+          },
+          select: {
+            IconComponent: ExpandMoreIcon,
+          },
         }}
       >
         {options.map((o) => (
@@ -383,7 +436,6 @@ function SelectField({ label, options }) {
   );
 }
 
-// ✅ FIXED: Typography cannot contain <div> (for Chip)
 function SummaryRow({ label, value }) {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center">

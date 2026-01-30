@@ -90,7 +90,7 @@ const TopBar = () => {
         </IconButton>
 
         {/* Profile */}
-        <IconButton onClick={()=>navigate("/institute/institute-admin-profile")}>
+        <IconButton onClick={()=>navigate("/institute/institute-profile")}>
         <Avatar
         
           sx={{

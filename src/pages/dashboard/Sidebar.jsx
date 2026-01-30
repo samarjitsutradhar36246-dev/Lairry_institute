@@ -6,7 +6,8 @@ import {
   Avatar,
   IconButton,
   Tooltip,
-  useTheme
+  useTheme,
+  ButtonBase
 } from "@mui/material";
 import {
   ChevronLeft,
@@ -19,11 +20,13 @@ import {
 } from "@mui/icons-material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider";
 
 export default function Sidebar({ open, onToggle }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading } = useInstituteSupabase();
 
   const navItems = [
     { label: "Dashboard", icon: <DashboardOutlined />, path: "/institute" },
@@ -33,8 +36,42 @@ export default function Sidebar({ open, onToggle }) {
     { label: "Onboarding", icon: <AppRegistration />, path: "/onboarding/institute-details" },
     { label: "Settings", icon: <SettingsOutlined />, path: "/institute/settings" }
   ];
+    if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#050a10",
+        }}
+      >
+        <CircularProgress color="primary" size={48} />
+      </Box>
+    );
+  }
 
+  if (!user) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white",
+          background: "#050a10",
+        }}
+      >
+        <Typography fontSize={16} color="#94a3b8">
+          No admin data found.
+        </Typography>
+      </Box>
+    );
+  }
   return (
+    
     <Box
       sx={{
         width: open ? 260 : 84,
@@ -161,26 +198,33 @@ export default function Sidebar({ open, onToggle }) {
         </Box>
 
         {/* USER */}
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            justifyContent: open ? "flex-start" : "center",
-            px: open ? 2 : 0
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar src="https://i.pravatar.cc/100?img=12" />
-            {open && (
-              <Box>
-                <Typography fontSize={14}>Dr. A. Sharma</Typography>
-                <Typography fontSize={12} color="#F8F8F8">
-                  Admin
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-        </Box>
+<ButtonBase
+  onClick={() => navigate("/institute/institute-admin-profile")}
+  sx={{
+    width: "100%",
+    display: "flex",
+    justifyContent: open ? "flex-start" : "center",
+    px: open ? 2 : 0,
+    borderRadius: 2,
+    cursor: "pointer",
+    "&:hover": {
+      background: "rgba(255,255,255,0.06)"
+    }
+  }}
+>
+  <Stack direction="row" spacing={2} alignItems="center">
+    <Avatar src="https://i.pravatar.cc/100?img=12" />
+    {open && (
+      <Box>
+        <Typography fontSize={14}>{user.contact_person_name}</Typography>
+        <Typography fontSize={12} color="#F8F8F8">
+          {user.contact_person_designation}
+        </Typography>
+      </Box>
+    )}
+  </Stack>
+</ButtonBase>
+
       </Box>
     </Box>
   );

@@ -28,6 +28,7 @@ import SettingsSecurity from "../pages/Settings/SettingsSecurity";
 import InstituteAdminProfile from "../pages/InstituteAdminProfile";
 import InstitutesLogin from "../pages/Authentication/InstituteLogin";
 import InstituteSignup from "../pages/Authentication/InstituteSignup";
+import InstituteProfile from "../pages/Profile/InstituteProfile";
 
 // Public
 // import NotFound from "../pages/public/NotFound";
@@ -62,6 +63,7 @@ export default function InstituteRoutes() {
         <Route path="sales" element={<SalesRevenue />} />
         <Route path="settings" element={<SettingsSecurity />} />
         <Route path="institute-admin-profile" element={<InstituteAdminProfile />} />
+        <Route path="institute-profile" element={<InstituteProfile />} />
         
       </Route>
       </Route>

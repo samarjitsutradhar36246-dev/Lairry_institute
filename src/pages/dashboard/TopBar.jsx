@@ -13,9 +13,11 @@ import {
   LightModeOutlined,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider"
 
 const TopBar = () => {
   const navigate=useNavigate();
+  const {user} = useInstituteSupabase();
   return (
     <Box
       sx={{
@@ -90,22 +92,19 @@ const TopBar = () => {
         </IconButton>
 
         {/* Profile */}
-        <IconButton onClick={()=>navigate("/institute/institute-profile")}>
-        <Avatar
-        
-          sx={{
-            width: 34,
-            height: 34,
-            bgcolor: "#137fec",
-            fontSize: 14,
-            fontWeight: 600,
-            
-          }}
-          
-        >
-          A
-        </Avatar>
-        </IconButton>
+<IconButton onClick={() => navigate("/institute/institute-profile")}>
+  <Avatar
+    sx={{
+      width: 34,
+      height: 34,
+      fontSize: 14,
+      fontWeight: 600,
+      border: "2px solid rgba(139, 92, 246, 0.6)", 
+      boxSizing: "border-box",   
+    }}
+    src={user?.avatar_url}
+  />
+</IconButton>
       </Stack>
     </Box>
   );

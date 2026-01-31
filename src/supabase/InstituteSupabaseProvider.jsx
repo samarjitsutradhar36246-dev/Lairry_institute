@@ -146,7 +146,7 @@ try {
     setSession(null);
   };
 
-  const value = { user, session, loading, signupInstitute, loginUser, logoutUser };
+  const value = { user,setUser, session, loading, signupInstitute, loginUser, logoutUser };
 
   return (
     <InstituteSupabaseContext.Provider value={value}>

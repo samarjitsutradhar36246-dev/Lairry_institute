@@ -24,6 +24,7 @@ import {
   People,
   Settings,
 } from "@mui/icons-material";
+import { supabase } from "../../supabase/SupabaseClient";
 import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider";
 import EditInstituteProfileModal from "./EditInstituteProfileModal";
 
@@ -94,13 +95,40 @@ const InfoRow = ({ icon: Icon, label, value, iconColor = "#22d3ee" }) => (
 );
 
 export default function InstituteProfile() {
-  const { user, loading } = useInstituteSupabase();
+  const { user, loading, setUser } = useInstituteSupabase();
   const [open, setOpen] = useState(false);
 
-  const handleSave = (updatedUser) => {
-    console.log("Updated Data", updatedUser);
-    // TODO: Save to supabase here
-  };
+
+
+const handleSave = async (updatedUser) => {
+  const payload = {};
+
+  Object.keys(updatedUser).forEach((field) => {
+    if (updatedUser[field] !== user[field]) {
+      payload[field] = updatedUser[field];
+    }
+  });
+
+   console.log("Payload to update:", payload);
+
+  if (Object.keys(payload).length === 0) return;
+
+  const { data, error } = await supabase
+    .from("institutes")
+    .update(payload)
+    .eq("auth_user_id", user.auth_user_id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  setUser(data);
+};
+
+
 
   if (loading) {
     return (
@@ -287,22 +315,23 @@ export default function InstituteProfile() {
           <Typography fontSize={20} fontWeight={700} color="white" mb={2}>
             About the Institute
           </Typography>
-          <Typography
-            color="#94a3b8"
-            fontSize={15}
-            lineHeight={1.8}
-            sx={{
-              px: 2,
-              py: 2,
-              borderRadius: 2,
-              background: "rgba(255,255,255,0.02)",
-              borderLeft: "3px solid #137fec",
-            }}
-          >
-            {user.institute_display_name || user.institute_name
-              ? `${user.institute_display_name || user.institute_name} is a ${user.institute_type || "leading educational"} institution dedicated to providing quality education and fostering academic excellence. Located in ${user.location_city}, ${user.location_state}, we are committed to shaping the future of our students through innovative teaching methodologies and comprehensive educational programs.`
-              : "No description available. Please update your institute profile to add more information."}
-          </Typography>
+<Typography
+  color="#94a3b8"
+  fontSize={15}
+  lineHeight={1.8}
+  sx={{
+    px: 2,
+    py: 2,
+    borderRadius: 2,
+    background: "rgba(255,255,255,0.02)",
+    borderLeft: "3px solid #137fec",
+  }}
+>
+  {user.institute_description
+    ? user.institute_description
+    : "No description available. Please update your institute profile to add more information."}
+</Typography>
+
         </GlassCard>
 
       {/* ---------------- CONTACT INFORMATION ---------------- */}

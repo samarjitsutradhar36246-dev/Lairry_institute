@@ -32,6 +32,7 @@ import {
   PlayCircleOutline,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider";
 
 /* ---------------- GLASS CARD ---------------- */
 const GlassCard = ({ children, sx }) => (
@@ -52,6 +53,7 @@ const GlassCard = ({ children, sx }) => (
 /* ---------------- DASHBOARD ---------------- */
 export default function DashBoard() {
   const navigate = useNavigate()
+  const {user} = useInstituteSupabase();
   return (
     <Box
       sx={{
@@ -99,7 +101,7 @@ export default function DashBoard() {
               }}
             />
             <Typography variant="h4" fontWeight={700} color="white">
-              Welcome back, IIT Delhi
+              Welcome {user?.institute_name}
             </Typography>
             <Typography color="#94a3b8" maxWidth={520}>
               Your institute's AI-powered performance overview is ready. You have

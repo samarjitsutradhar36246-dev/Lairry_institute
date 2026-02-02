@@ -171,28 +171,28 @@ const filteredStudents = students.filter((s) => {
 
   return (
     <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#141118",
-        color: "white",
-        fontFamily: "Lexend, sans-serif",
-        position: "relative",
-        overflow: "hidden",
-      }}
+      // sx={{
+      //   minHeight: "100vh",
+      //   bgcolor: "#141118",
+      //   color: "white",
+      //   fontFamily: "Lexend, sans-serif",
+      //   position: "relative",
+      //   overflow: "hidden",
+      // }}
     >
       {/* Background glow blobs */}
       <Box
-        sx={{
-          position: "absolute",
-          top: "-20%",
-          right: "-10%",
-          width: 800,
-          height: 800,
-          bgcolor: "primary.main",
-          opacity: 0.2,
-          filter: "blur(120px)",
-          borderRadius: "50%",
-        }}
+        // sx={{
+        //   position: "absolute",
+        //   top: "-20%",
+        //   right: "-10%",
+        //   width: 800,
+        //   height: 800,
+        //   bgcolor: "primary.main",
+        //   opacity: 0.2,
+        //   filter: "blur(120px)",
+        //   borderRadius: "50%",
+        // }}
       />
       <Box
         sx={{
@@ -200,7 +200,7 @@ const filteredStudents = students.filter((s) => {
           bottom: "-20%",
           left: "-10%",
           width: 600,
-          height: 600,
+          
           bgcolor: "#1e3a8a",
           opacity: 0.2,
           filter: "blur(100px)",
@@ -209,7 +209,10 @@ const filteredStudents = students.filter((s) => {
       />
 
       {/* Content */}
-      <Box sx={{ position: "relative", zIndex: 1, p: { xs: 3, md: 6 } }}>
+      <Box sx={{ position: "relative", zIndex: 1, 
+        // p: { xs: 3, md: 6 }
+         py: { xs: 2, md: 3 },
+       }}>
         {/* Header */}
         <Stack
           direction={{ xs: "column", md: "row" }}

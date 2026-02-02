@@ -24,9 +24,12 @@ import {
   People,
   Settings,
 } from "@mui/icons-material";
+import DevicesIcon from "@mui/icons-material/Devices"
+import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import { supabase } from "../../supabase/SupabaseClient";
 import { useInstituteSupabase } from "../../supabase/InstituteSupabaseProvider";
 import EditInstituteProfileModal from "./EditInstituteProfileModal";
+import { useNavigate } from "react-router-dom";
 
 const GlassCard = ({ children, sx, hover = false }) => (
   <Card
@@ -95,11 +98,19 @@ const InfoRow = ({ icon: Icon, label, value, iconColor = "#22d3ee" }) => (
 );
 
 export default function InstituteProfile() {
-  const { user, loading, setUser } = useInstituteSupabase();
+  const { user, loading, setUser, logoutUser } = useInstituteSupabase();
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
 
-
+const handleLogout = async () => {
+  try {
+    await logoutUser();
+    navigate("/institutes-login");
+  } catch (err) {
+    console.error("Logout failed", err);
+  }
+}
 const handleSave = async (updatedUser) => {
   const payload = {};
 
@@ -183,6 +194,48 @@ const handleSave = async (updatedUser) => {
       />
 
       <Box maxWidth="1400px" mx="auto" display="flex" flexDirection="column" gap={3}>
+        <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+  <Button
+    variant="outlined"
+    onClick={() => navigate(-1)} // go back to previous page
+    sx={{
+      color: "white",
+      borderColor: "rgba(255,255,255,0.3)",
+      "&:hover": {
+        borderColor: "rgba(255,255,255,0.6)",
+        backgroundColor: "rgba(255,255,255,0.05)",
+      },
+      px: 3,
+      py: 1,
+      borderRadius: 2,
+    }}
+  >
+    ← Back
+  </Button>
+              <Button
+              variant="contained"
+              size="large"
+              sx={{
+                bgcolor: "#137fec",
+                "&:hover": {
+                  bgcolor: "#0f6cd4",
+                  boxShadow: "0 8px 24px rgba(19,127,236,0.4)",
+                },
+                color: "white",
+                textTransform: "none",
+                px: 4,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                boxShadow: "0 4px 16px rgba(19,127,236,0.3)",
+              }}
+              startIcon={<Edit />}
+              onClick={() => setOpen(true)}
+            >
+              Edit Profile
+            </Button>
+</Box>
+
         {/* ---------------- INSTITUTE HEADER ---------------- */}
         <GlassCard sx={{ p: { xs: 3, md: 5 } }}>
           <Stack
@@ -285,28 +338,7 @@ const handleSave = async (updatedUser) => {
               </Typography>
             </Box>
 
-            <Button
-              variant="contained"
-              size="large"
-              sx={{
-                bgcolor: "#137fec",
-                "&:hover": {
-                  bgcolor: "#0f6cd4",
-                  boxShadow: "0 8px 24px rgba(19,127,236,0.4)",
-                },
-                color: "white",
-                textTransform: "none",
-                px: 4,
-                py: 1.5,
-                borderRadius: 2,
-                fontWeight: 600,
-                boxShadow: "0 4px 16px rgba(19,127,236,0.3)",
-              }}
-              startIcon={<Edit />}
-              onClick={() => setOpen(true)}
-            >
-              Edit Profile
-            </Button>
+
           </Stack>
         </GlassCard>
     
@@ -427,7 +459,7 @@ const handleSave = async (updatedUser) => {
       </GlassCard>
 
         {/* ---------------- QUICK ACTIONS ---------------- */}
-        <Box>
+        {/* <Box>
           <Typography
             fontSize={20}
             fontWeight={700}
@@ -503,7 +535,60 @@ const handleSave = async (updatedUser) => {
               </Grid>
             ))}
           </Grid>
-        </Box>
+        </Box> */}
+
+                    {/* Session Management */}
+            <GlassCard
+              sx={{
+                p: 3,
+                borderLeft: "4px solid rgba(239,68,68,0.6)",
+              }}
+            >
+              <Stack direction="row" spacing={1.5} mb={2}>
+                <DevicesIcon sx={{ color: "#f87171" }} />
+                <Typography fontWeight={700} sx={{color:"white"}}>Session Management</Typography>
+              </Stack>
+
+              <Typography
+                variant="body2"
+                sx={{ color: "#a89cba", mb: 3, maxWidth: 520 }}
+              >
+                Manage active sessions. If you notice any suspicious activity,
+                sign out of all other devices immediately.
+              </Typography>
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  sx={{
+                    borderColor: "rgba(255,255,255,0.2)",
+                    color: "#fff",
+                    py: 1.4,
+                    borderRadius: 3,
+                  }}
+                >
+                  Sign out of all devices
+                </Button>
+                <Button
+                onClick={handleLogout}
+                  fullWidth
+                  startIcon={<PowerSettingsNewIcon />}
+                  sx={{
+                    py: 1.4,
+                    borderRadius: 3,
+                    bgcolor: "rgba(239,68,68,0.15)",
+                    border: "1px solid rgba(239,68,68,0.35)",
+                    color: "#f87171",
+                    "&:hover": {
+                      bgcolor: "rgba(239,68,68,0.25)",
+                    },
+                  }}
+                >
+                  Log Out Current Session
+                </Button>
+              </Stack>
+            </GlassCard>
       </Box>
     </Box>
   );

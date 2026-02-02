@@ -17,8 +17,8 @@ import BankPayoutinfo4 from "../pages/OnBoarding/BankPayoutinfo4";
 import SubmissionConfirmation from "../pages/OnBoarding/SubmissionConfirmation";
 
 // Dashboard & Settings
-import DashboardLayout from "../Layouts/InstituteLayout";
-import DashBoard from "../pages/dashboard/DashBoard";
+import InstituteLayout from "../Layouts/InstituteLayout";
+import DashBoardV1 from "../pages/dashboard/DashBoardV1";
 import Exams from "../pages/ExamManagement/Exams";
 import CreateExam from "../pages/ExamManagement/CreateExam";
 import MarkingnExcel from "../pages/ExamManagement/MarkingnExcel";
@@ -54,8 +54,8 @@ export default function InstituteRoutes() {
 
       {/* Dashboard Layout Routes */}
       <Route element={<ProtectedRoute />}>
-      <Route path="/institute" element={<DashboardLayout />}>
-        <Route index element={<DashBoard />} />
+      <Route path="/institute" element={<InstituteLayout />}>
+        <Route index element={<DashBoardV1 />} />
         <Route path="exams" element={<Exams />} />
         <Route path="exams/create" element={<CreateExam />} />
         <Route path="marking" element={<MarkingnExcel />} />

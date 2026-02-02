@@ -22,7 +22,7 @@ const TopBar = () => {
     <Box
       sx={{
         height: 64,
-        px: { xs: 2, md: 4 },
+        px: { xs: 2, md: 8 },
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -32,15 +32,27 @@ const TopBar = () => {
         borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}
     >
-      {/* -------- LEFT: Title -------- */}
-      <Typography
-        fontSize={20}
-        fontWeight={700}
-        color="white"
-        letterSpacing={0.3}
-      >
-    
-      </Typography>
+      
+      {/* -------- LEFT: Logo + Company Name -------- */}
+      <Stack direction="row" alignItems="center" spacing={1}>
+        {/* Optional Logo Image */}
+        <Box
+          component="img"
+          src="/images/logo.png" 
+          alt="L.AI.RRY Logo"
+          sx={{ width: 36, height: 36, borderRadius: "50%" }}
+        />
+
+        {/* Company Name */}
+        <Typography
+          fontSize={20}
+          fontWeight={700}
+          color="white"
+          letterSpacing={0.3}
+        >
+          L.AI.RRY
+        </Typography>
+      </Stack>
 
       {/* -------- RIGHT: Actions -------- */}
       <Stack direction="row" spacing={1.5} alignItems="center">

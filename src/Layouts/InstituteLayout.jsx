@@ -4,13 +4,20 @@ import Sidebar from "../pages/dashboard/Sidebar";
 import TopBar from "../pages/dashboard/TopBar"; 
 import { Outlet } from "react-router-dom";
 
-export default function DashboardLayout() {
+export default function InstituteLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   return (
-    <Box sx={{ display: "flex", width: "100%", minHeight: "100vh", backgroundColor: "#050a10" }}>
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
+        minHeight: "100vh",
+        backgroundColor: "#050a10",
+      }}
+    >
       {/* Sidebar fixed */}
-      <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen((prev) => !prev)} />
+      {/* <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen((prev) => !prev)} />  */}
 
       {/* Main content */}
       <Box
@@ -18,8 +25,8 @@ export default function DashboardLayout() {
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
-          height: "100vh", // ensure it fills viewport height
-          overflow: "hidden", // prevent entire page scrolling
+          height: "100vh", // keep viewport height
+          overflow: "hidden", // prevent outer scroll
         }}
       >
         {/* TopBar fixed at top */}
@@ -27,12 +34,14 @@ export default function DashboardLayout() {
           <TopBar />
         </Box>
 
-        {/* Scrollable page content */}
+        {/* Scrollable page content BELOW TopBar */}
         <Box
           sx={{
             flexGrow: 1,
-            overflowY: "auto", // only page content scrolls
-            p: 2,
+            overflowY: "auto", // scroll only page content
+            px: 2,
+            py: 2,
+            boxSizing: "border-box",
           }}
         >
           <Outlet />

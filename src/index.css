@@ -55,3 +55,107 @@
   background: transparent;
 }
 
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 25px rgba(55, 19, 236, 0.3);
+  border-color: #3713ec;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+/* ================= GLOBAL THEME ================= */
+
+html,
+body {
+  background: radial-gradient(
+      1200px 600px at 20% -10%,
+      rgba(88, 70, 255, 0.18),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #0b0a18 0%, #131022 100%);
+  color: #e5e7eb;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* ================= COLORS ================= */
+
+.text-primary {
+  color: #4f46ff;
+}
+
+.bg-primary {
+  background: linear-gradient(135deg, #4f46ff, #6d5cff);
+}
+
+.border-glass {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ================= GLASS CARDS ================= */
+
+.card {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  backdrop-filter: blur(18px);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ================= GLOW EFFECTS ================= */
+
+.glow-primary {
+  box-shadow:
+    0 0 0 1px rgba(79, 70, 255, 0.25),
+    0 0 40px rgba(79, 70, 255, 0.45);
+}
+
+.glow-soft {
+  box-shadow: 0 0 60px rgba(79, 70, 255, 0.18);
+}
+
+/* ================= BADGES ================= */
+
+.badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ================= STAT CARDS ================= */
+
+.stat-primary {
+  background: linear-gradient(135deg, #4f46ff, #5b4cff);
+  box-shadow:
+    0 0 0 1px rgba(79, 70, 255, 0.35),
+    0 0 50px rgba(79, 70, 255, 0.55);
+}
+
+/* ================= STATUS ================= */
+
+.status-ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}

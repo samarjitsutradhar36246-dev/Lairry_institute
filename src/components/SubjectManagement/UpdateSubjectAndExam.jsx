@@ -7,6 +7,7 @@ import {
   InputLabel,
   Select as MuiSelect,
   MenuItem,
+  FormHelperText, // ✅ added
   Snackbar,
   Alert,
 } from "@mui/material";
@@ -22,19 +23,21 @@ export default function UpdateSubjectAndExam() {
   const { subject_id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false); // ✅ added
   const [chapters, setChapters] = useState([
     {
       className: "",
       chapterName: "",
       topics: "",
-      chapterType: "", // NEW (optional)
+      chapterType: "",
     },
   ]);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // "success" | "error"
+    severity: "success",
   });
+
   const addChapter = () => {
     setChapters((prev) => [
       ...prev,
@@ -55,6 +58,7 @@ export default function UpdateSubjectAndExam() {
     icon: "",
     status: "Active",
   });
+
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -63,8 +67,7 @@ export default function UpdateSubjectAndExam() {
     try {
       setLoading(true);
       const data = await fecthUpdateInstituteExamSubjectData(subject_id);
-
-      // 1️⃣ Fill subject fields
+      console.log(data);
       setFormData({
         subject_name: data.subject_name || "",
         total_chapter: data.total_chapters?.toString() || "",
@@ -72,17 +75,15 @@ export default function UpdateSubjectAndExam() {
         icon: data.icon || "",
         status: data.subject_status || "Active",
       });
-
-      // 2️⃣ Flatten chapters
+      console.log(formData);
       const flatChapters = [];
-
       data.chapters_and_topics_name?.forEach((group) => {
         group.chapters.forEach((ch) => {
           flatChapters.push({
             className: group.class || "",
             chapterName: ch.chapter_name || "",
             topics: (ch.topics || []).join(", "),
-            chapterType: group.chapter_type || "", // optional
+            chapterType: group.chapter_type || "",
           });
         });
       });
@@ -105,108 +106,102 @@ export default function UpdateSubjectAndExam() {
     }
   }, [subject_id]);
 
+  // ✅ errors object
+  const errors = {
+    subject_name: touched && !formData.subject_name.trim(),
+    total_chapter: touched && !formData.total_chapter.trim(),
+    description: touched && !formData.description.trim(),
+    icon: touched && !formData.icon,
+    chapters: touched && chapters.length === 0,
+  };
+
+  // ✅ per-chapter errors
+  const chapterErrors = (index) => ({
+    className: touched && !chapters[index]?.className.trim(),
+    chapterName: touched && !chapters[index]?.chapterName.trim(),
+    topics: touched && !chapters[index]?.topics.trim(),
+  });
+
   const validateForm = () => {
     if (!formData.subject_name.trim()) {
       setSnackbar({
         open: true,
-        message: "Subject name is required ❌",
+        message: "Please fill all the details ❌",
         severity: "error",
       });
-
       return false;
     }
-
     if (!formData.total_chapter.trim()) {
       setSnackbar({
         open: true,
-        message: "Total chapter is required ❌",
+        message: "Please fill all the details   ❌",
         severity: "error",
       });
-
       return false;
     }
     if (!formData.description.trim()) {
       setSnackbar({
         open: true,
-        message: "Subject description is required ❌",
+        message: "Please fill all the details  ❌",
         severity: "error",
       });
-
       return false;
     }
-
     if (!formData.icon) {
       setSnackbar({
         open: true,
-        message: "Please select an icon ❌",
+        message: "Please fill all the details  ❌",
         severity: "error",
       });
-
       return false;
     }
-
     if (!chapters.length) {
       setSnackbar({
         open: true,
-        message: "At least one chapter is required ❌",
+        message: "Please fill all the details  ❌",
         severity: "error",
       });
-
       return false;
     }
-
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-
       if (!ch.className.trim()) {
         setSnackbar({
           open: true,
-          message: `Class is required in Chapter ${i + 1}❌`,
+          message: `Class is required in Chapter ${i + 1} ❌`,
           severity: "error",
         });
-
         return false;
       }
-
       if (!ch.chapterName.trim()) {
         setSnackbar({
           open: true,
           message: `Chapter name is required in Chapter ${i + 1} ❌`,
           severity: "error",
         });
-
         return false;
       }
-
       if (!ch.topics.trim()) {
         setSnackbar({
           open: true,
           message: `Topics are required in Chapter ${i + 1} ❌`,
           severity: "error",
         });
-
         return false;
       }
     }
-
     return true;
   };
+
   const buildChapterPayload = () => {
     const grouped = {};
-
     chapters.forEach((ch) => {
       if (!grouped[ch.className]) {
-        grouped[ch.className] = {
-          class: ch.className,
-          chapters: [],
-        };
-
-        // add chapter_type only if exists
+        grouped[ch.className] = { class: ch.className, chapters: [] };
         if (ch.chapterType?.trim()) {
           grouped[ch.className].chapter_type = ch.chapterType.trim();
         }
       }
-
       grouped[ch.className].chapters.push({
         chapter_name: ch.chapterName,
         topics: ch.topics
@@ -215,7 +210,6 @@ export default function UpdateSubjectAndExam() {
           .filter(Boolean),
       });
     });
-
     return Object.values(grouped);
   };
 
@@ -229,6 +223,7 @@ export default function UpdateSubjectAndExam() {
       (ch) =>
         !ch.className.trim() || !ch.chapterName.trim() || !ch.topics.trim(),
     );
+
   return (
     <div className="relative min-h-screen bg-[var(--bg-default)] text-[var(--text-primary)] font-manrope overflow-hidden ml-5">
       <LoadingDialog open={loading} />
@@ -245,7 +240,6 @@ export default function UpdateSubjectAndExam() {
         </Alert>
       </Snackbar>
 
-      {/* Page Container */}
       <div className="relative max-w-[1400px] mx-auto px-6 lg:px-10 py-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
@@ -253,17 +247,16 @@ export default function UpdateSubjectAndExam() {
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-black">Update Existing Subject</h1>
             </div>
-
             <p className="text-[var(--text-secondary)] mt-2 max-w-xl text-sm">
               Configure the essential details for your upcoming examination.
             </p>
           </div>
 
-          {/* Header Actions */}
           <div className="flex gap-3">
             <button
-              disabled={isFormIncomplete}
+              disabled={false}
               onClick={async () => {
+                setTouched(true); // ✅
                 if (!validateForm()) return;
 
                 try {
@@ -282,7 +275,6 @@ export default function UpdateSubjectAndExam() {
                     message: "Subject updated successfully ✅",
                     severity: "success",
                   });
-
                   navigate("/");
                 } catch (err) {
                   setSnackbar({
@@ -294,7 +286,11 @@ export default function UpdateSubjectAndExam() {
                   setLoading(false);
                 }
               }}
-              className={`px-5 py-2 rounded-lg font-bold transition ${isFormIncomplete ? "bg-gray-400 cursor-not-allowed opacity-50" : "bg-[var(--primary)] hover:bg-[var(--secondary)]"}`}>
+              className={`px-5 py-2 rounded-lg font-bold transition ${
+                isFormIncomplete
+                  ? "bg-gray-400 cursor-not-allowed opacity-50"
+                  : "bg-[var(--primary)] hover:bg-[var(--secondary)]"
+              }`}>
               Update Subject →
             </button>
           </div>
@@ -302,17 +298,19 @@ export default function UpdateSubjectAndExam() {
 
         {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols gap-6">
-          {/* LEFT COLUMN */}
           <div className="flex flex-col gap-6">
-            {/* Exam Details */}
+            {/* Subject Details */}
             <GlassCard>
               <SectionHeader title="Subject Details" />
-
               <TwoCol>
                 <TextField
                   label="Subject Name"
                   value={formData.subject_name}
                   onChange={(v) => handleChange("subject_name", v.target.value)}
+                  error={errors.subject_name} // ✅
+                  helperText={
+                    errors.subject_name ? "Subject name is required" : ""
+                  }
                 />
                 <TextField
                   label="Total Chapter"
@@ -320,8 +318,13 @@ export default function UpdateSubjectAndExam() {
                   onChange={(v) =>
                     handleChange("total_chapter", v.target.value)
                   }
+                  error={errors.total_chapter} // ✅
+                  helperText={
+                    errors.total_chapter ? "Total chapter is required" : ""
+                  }
                 />
               </TwoCol>
+
               <div className="pt-5">
                 <TextField
                   label="Description of Subject"
@@ -330,6 +333,10 @@ export default function UpdateSubjectAndExam() {
                   fullWidth
                   value={formData.description}
                   onChange={(v) => handleChange("description", v.target.value)}
+                  error={errors.description} // ✅
+                  helperText={
+                    errors.description ? "Description is required" : ""
+                  }
                 />
               </div>
 
@@ -338,9 +345,9 @@ export default function UpdateSubjectAndExam() {
                   label="Choose subject icon"
                   value={formData.icon}
                   onChange={(v) => handleChange("icon", v)}
+                  error={errors.icon ? "Please select an icon" : ""} // ✅
                   options={["", "psychology", "science", "rocket", "quiz"]}
                 />
-
                 <Select
                   label="Status"
                   value={formData.status}
@@ -349,6 +356,8 @@ export default function UpdateSubjectAndExam() {
                 />
               </TwoCol>
             </GlassCard>
+
+            {/* Chapters */}
             <GlassCard>
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -357,8 +366,6 @@ export default function UpdateSubjectAndExam() {
                     Add chapters under this subject
                   </p>
                 </div>
-
-                {/* Add Chapter Button */}
                 <button
                   onClick={addChapter}
                   className="w-10 h-10 flex items-center justify-center rounded-lg bg-[var(--primary)] hover:bg-[var(--secondary)] transition font-bold text-xl"
@@ -367,7 +374,13 @@ export default function UpdateSubjectAndExam() {
                 </button>
               </div>
 
-              {/* Chapters List */}
+              {/* ✅ Show error if no chapters */}
+              {errors.chapters && (
+                <p className="text-sm text-red-500 mb-3">
+                  At least one chapter is required
+                </p>
+              )}
+
               <div className="flex flex-col gap-4">
                 {chapters.map((chapter, index) => (
                   <div
@@ -384,13 +397,24 @@ export default function UpdateSubjectAndExam() {
                         onChange={(e) =>
                           updateChapter(index, "className", e.target.value)
                         }
+                        error={chapterErrors(index).className} // ✅
+                        helperText={
+                          chapterErrors(index).className
+                            ? "Class is required"
+                            : ""
+                        }
                       />
-
                       <TextField
                         label="Chapter Name"
                         value={chapter.chapterName}
                         onChange={(e) =>
                           updateChapter(index, "chapterName", e.target.value)
+                        }
+                        error={chapterErrors(index).chapterName} // ✅
+                        helperText={
+                          chapterErrors(index).chapterName
+                            ? "Chapter name is required"
+                            : ""
                         }
                       />
                     </TwoCol>
@@ -403,8 +427,13 @@ export default function UpdateSubjectAndExam() {
                           updateChapter(index, "topics", e.target.value)
                         }
                         placeholder="Comma separated"
+                        error={chapterErrors(index).topics} // ✅
+                        helperText={
+                          chapterErrors(index).topics
+                            ? "Topics are required"
+                            : ""
+                        }
                       />
-
                       <TextField
                         label="Chapter Type (optional)"
                         value={chapter.chapterType}
@@ -413,6 +442,7 @@ export default function UpdateSubjectAndExam() {
                         }
                       />
                     </TwoCol>
+
                     <div className="items-center pt-5 justify-center">
                       <button
                         onClick={() =>
@@ -449,9 +479,10 @@ export default function UpdateSubjectAndExam() {
     </div>
   );
 }
+
 function GlassCard({ children }) {
   return (
-    <div className="p-6 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] backdrop-blur-xl  shadow-xl">
+    <div className="p-6 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] backdrop-blur-xl shadow-xl">
       {children}
     </div>
   );
@@ -467,11 +498,11 @@ function TwoCol({ children }) {
   );
 }
 
-function Select({ label, options, value, onChange }) {
+// ✅ Updated Select to support error prop
+function Select({ label, options, value, onChange, error }) {
   return (
-    <FormControl fullWidth size="small">
+    <FormControl fullWidth size="small" error={!!error}>
       <InputLabel>{label}</InputLabel>
-
       <MuiSelect
         value={value}
         label={label}
@@ -482,6 +513,7 @@ function Select({ label, options, value, onChange }) {
           </MenuItem>
         ))}
       </MuiSelect>
+      {error && <FormHelperText>{error}</FormHelperText>}
     </FormControl>
   );
 }

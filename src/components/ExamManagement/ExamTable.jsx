@@ -12,8 +12,11 @@ import {
   Card,
   TableContainer,
   TablePagination,
-  Button,Snackbar, Alert
+  Button,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import { useConfirm } from "../../utilities/useConfirm";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import ScienceIcon from "@mui/icons-material/Science";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
@@ -34,9 +37,9 @@ const ExamTable = ({
   deleteExamData,
   fetchInstituteAndExamData,
   setinstituteExamsData,
-  setLoading
+  setLoading,
 }) => {
-
+  const { confirm, ConfirmDialog } = useConfirm();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -44,31 +47,29 @@ const ExamTable = ({
 
   const paginatedData = exams.slice(
     page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
+    page * rowsPerPage + rowsPerPage,
   );
-const [snackbar, setSnackbar] = useState({
-  open: false,
-  message: "",
-  severity: "success", // "success" | "error"
-});
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success", // "success" | "error"
+  });
   return (
     <GlassCard>
+      <ConfirmDialog />
       <Snackbar
-  open={snackbar.open}
-  autoHideDuration={4000}
-  onClose={() => setSnackbar({ ...snackbar, open: false })}
-  anchorOrigin={{ vertical: "top", horizontal: "center" }}
->
-  <Alert
-    severity={snackbar.severity}
-    variant="filled"
-    onClose={() => setSnackbar({ ...snackbar, open: false })}
-  >
-    {snackbar.message}
-  </Alert>
-</Snackbar>
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       <CardContent sx={{ p: 0 }}>
-
         {/* Header */}
         <Box
           sx={{
@@ -76,8 +77,7 @@ const [snackbar, setSnackbar] = useState({
             borderBottom: "1px solid",
             borderColor: "divider",
             bgcolor: "background.paper",
-          }}
-        >
+          }}>
           <Typography fontSize={18} fontWeight={700}>
             All Exams
           </Typography>
@@ -85,26 +85,20 @@ const [snackbar, setSnackbar] = useState({
 
         <TableContainer>
           <Table stickyHeader>
-
             <TableHead>
               <TableRow>
-                {[
-                  "Exam Name",
-                  "Category",
-                  "Language",
-                  "Status",
-                  "Action",
-                ].map((h) => (
-                  <TableCell
-                    key={h}
-                    sx={{
-                      fontWeight: 600,
-                      background: "var(--surface-1)"
-                    }}
-                  >
-                    {h}
-                  </TableCell>
-                ))}
+                {["Exam Name", "Category", "Language", "Status", "Action"].map(
+                  (h) => (
+                    <TableCell
+                      key={h}
+                      sx={{
+                        fontWeight: 600,
+                        background: "var(--surface-1)",
+                      }}>
+                      {h}
+                    </TableCell>
+                  ),
+                )}
               </TableRow>
             </TableHead>
 
@@ -116,10 +110,9 @@ const [snackbar, setSnackbar] = useState({
                   sx={{
                     transition: "0.2s",
                     "&:hover": {
-                      backgroundColor: "rgba(255,255,255,0.04)"
-                    }
-                  }}
-                >
+                      backgroundColor: "rgba(255,255,255,0.04)",
+                    },
+                  }}>
                   <TableCell>
                     <Stack direction="row" spacing={2} alignItems="center">
                       <Box
@@ -132,8 +125,7 @@ const [snackbar, setSnackbar] = useState({
                           alignItems: "center",
                           justifyContent: "center",
                           color: "primary.main",
-                        }}
-                      >
+                        }}>
                         {ICON_MAP[exam.icon] ?? <QuizIcon fontSize="small" />}
                       </Box>
 
@@ -152,9 +144,7 @@ const [snackbar, setSnackbar] = useState({
                       label={exam.exam_status}
                       size="small"
                       color={
-                        exam.exam_status === "Active"
-                          ? "success"
-                          : "error"
+                        exam.exam_status === "Active" ? "success" : "error"
                       }
                       variant="outlined"
                     />
@@ -165,8 +155,7 @@ const [snackbar, setSnackbar] = useState({
                       size="small"
                       onClick={() =>
                         navigate(`/institute/update-exams/${exam.id}`)
-                      }
-                    >
+                      }>
                       Edit
                     </Button>
 
@@ -174,33 +163,34 @@ const [snackbar, setSnackbar] = useState({
                       size="small"
                       color="error"
                       onClick={async () => {
-                        const confirmDelete = window.confirm(
-                          "Are you sure you want to delete this exam?"
+                        const confirmDelete = await confirm(
+                          "Are you sure you want to delete this exam?",
                         );
+
                         if (!confirmDelete) return;
 
                         try {
                           setLoading(true);
                           await deleteExamData(exam.id, institute_id);
                           setSnackbar({
-    open: true,
-    message: "Exam deleted successfully ✅",
-    severity: "success",
-  });
+                            open: true,
+                            message: "Exam deleted successfully ✅",
+                            severity: "success",
+                          });
+
                           const updatedData =
                             await fetchInstituteAndExamData(institute_id);
                           setinstituteExamsData(updatedData);
                         } catch (err) {
-                         setSnackbar({
-    open: true,
-    message: err.message || "Failed to delete exam ❌",
-    severity: "error",
-  });
+                          setSnackbar({
+                            open: true,
+                            message: err.message || "Failed to delete exam ❌",
+                            severity: "error",
+                          });
                         } finally {
                           setLoading(false);
                         }
-                      }}
-                    >
+                      }}>
                       Delete
                     </Button>
                   </TableCell>
@@ -215,7 +205,6 @@ const [snackbar, setSnackbar] = useState({
                 </TableRow>
               )}
             </TableBody>
-
           </Table>
         </TableContainer>
 
@@ -232,7 +221,6 @@ const [snackbar, setSnackbar] = useState({
           }}
           rowsPerPageOptions={[10, 20, 50]}
         />
-
       </CardContent>
     </GlassCard>
   );
@@ -245,13 +233,11 @@ const GlassCard = ({ children, sx }) => (
         theme.palette.mode === "dark"
           ? "rgba(17,24,39,0.7)"
           : theme.palette.background.paper,
-      backdropFilter:
-        theme.palette.mode === "dark" ? "blur(14px)" : "none",
+      backdropFilter: theme.palette.mode === "dark" ? "blur(14px)" : "none",
       border: `1px solid ${theme.palette.divider}`,
       borderRadius: 3,
       ...sx,
-    })}
-  >
+    })}>
     {children}
   </Card>
 );

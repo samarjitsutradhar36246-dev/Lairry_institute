@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useConfirm } from "../../utilities/useConfirm";
 import {
   Box,
   Typography,
@@ -12,7 +13,9 @@ import {
   TableBody,
   TableContainer,
   TablePagination,
-  Card,Snackbar,Alert
+  Card,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 
 const QuestionTable = ({
@@ -25,16 +28,15 @@ const QuestionTable = ({
   setLoading,
   selectedTestPaperId,
 }) => {
-
   // ✅ Pagination State
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
+  const { confirm, ConfirmDialog } = useConfirm();
   const [snackbar, setSnackbar] = useState({
-  open: false,
-  message: "",
-  severity: "success", // "success" | "error"
-});
+    open: false,
+    message: "",
+    severity: "success", // "success" | "error"
+  });
 
   const questions = subjectsTestpapersQuestion?.QuestionsData || [];
 
@@ -46,25 +48,43 @@ const QuestionTable = ({
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+  const handleDelete = async (id) => {
+    const ok = await confirm("Are you sure you want to delete?");
+
+    if (ok) {
+      {
+        setLoading(true);
+        await deleteSubjectAndTestpaperQuestionData(id);
+
+        const updatedQuestionData =
+          await fetchSubjectsTestPapersQuestionsData(selectedTestPaperId);
+        setSubjectsTestpapersQuestion(updatedQuestionData);
+        setLoading(false);
+        setSnackbar({
+          open: true,
+          message: "Question deleted successfully ✅",
+          severity: "success",
+        });
+      }
+    }
+  };
 
   return (
     <GlassCard>
+      <ConfirmDialog />
       <Snackbar
-  open={snackbar.open}
-  autoHideDuration={4000}
-  onClose={() => setSnackbar({ ...snackbar, open: false })}
-  anchorOrigin={{ vertical: "top", horizontal: "center" }}
->
-  <Alert
-    severity={snackbar.severity}
-    variant="filled"
-    onClose={() => setSnackbar({ ...snackbar, open: false })}
-  >
-    {snackbar.message}
-  </Alert>
-</Snackbar>
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       <CardContent sx={{ p: 0 }}>
-
         {/* Header */}
         <Box
           sx={{
@@ -72,13 +92,8 @@ const QuestionTable = ({
             borderBottom: "1px solid",
             borderColor: "divider",
             bgcolor: "background.paper",
-          }}
-        >
-          <Typography
-            fontSize={18}
-            fontWeight={700}
-            color="text.primary"
-          >
+          }}>
+          <Typography fontSize={18} fontWeight={700} color="text.primary">
             All Questions for Test Paper
           </Typography>
         </Box>
@@ -109,8 +124,7 @@ const QuestionTable = ({
                       fontWeight: 600,
                       borderBottom: "1px solid",
                       borderColor: "divider",
-                    }}
-                  >
+                    }}>
                     {h}
                   </TableCell>
                 ))}
@@ -128,56 +142,51 @@ const QuestionTable = ({
                       "&:hover": {
                         bgcolor: "action.hover",
                       },
-                    }}
-                  >
+                    }}>
                     <TableCell>
                       <Typography
                         color="text.primary"
                         fontWeight={600}
-                        fontSize={14}
-                      >
+                        fontSize={14}>
                         {question.question_text}
                       </Typography>
                     </TableCell>
 
-                    
-<TableCell>
-                    {question.options && Array.isArray(question.options) ? (
-                      <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                        {question.options.map((option, index) => (
-                          <Box
-                            component="li"
-                            key={index}
-                            sx={{
-                              color: "text.secondary",
-                              fontSize: 14,
-                              lineHeight: 1.6
-                            }}
-                          >
-                            {option}
-                          </Box>
-                        ))}
-                      </Box>
-                    ) : typeof question.options === "string" ? (
-                      <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                        {question.options.split(",").map((option, index) => (
-                          <Box
-                            component="li"
-                            key={index}
-                            sx={{
-                              color: "text.secondary",
-                              fontSize: 14,
-                              lineHeight: 1.6
-                            }}
-                          >
-                            {option.trim()}
-                          </Box>
-                        ))}
-                      </Box>
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
+                    <TableCell>
+                      {question.options && Array.isArray(question.options) ? (
+                        <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                          {question.options.map((option, index) => (
+                            <Box
+                              component="li"
+                              key={index}
+                              sx={{
+                                color: "text.secondary",
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                              }}>
+                              {option}
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : typeof question.options === "string" ? (
+                        <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                          {question.options.split(",").map((option, index) => (
+                            <Box
+                              component="li"
+                              key={index}
+                              sx={{
+                                color: "text.secondary",
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                              }}>
+                              {option.trim()}
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
                     <TableCell sx={{ color: "text.secondary" }}>
                       {question.question_instruction}
                     </TableCell>
@@ -220,10 +229,9 @@ const QuestionTable = ({
                         }}
                         onClick={() =>
                           navigate(
-                            `/institute/exam/subject/testpaper/update-question/${question.q_id}`
+                            `/institute/exam/subject/testpaper/update-question/${question.q_id}`,
                           )
-                        }
-                      >
+                        }>
                         Edit
                       </Typography>
 
@@ -237,30 +245,7 @@ const QuestionTable = ({
                             textDecoration: "underline",
                           },
                         }}
-                        onClick={async () => {
-                          const confirmDelete = window.confirm(
-                            "Are you sure you want to delete this exam?"
-                          );
-
-                          if (confirmDelete) {
-                            setLoading(true);
-                            await deleteSubjectAndTestpaperQuestionData(
-                              question.q_id
-                            );
-                            setSnackbar({
-    open: true,
-    message: "Question deleted successfully ✅",
-    severity: "success",
-  });
-                            const updatedQuestionData =
-                              await fetchSubjectsTestPapersQuestionsData(
-                                selectedTestPaperId
-                              );
-                            setSubjectsTestpapersQuestion(updatedQuestionData);
-                            setLoading(false);
-                          }
-                        }}
-                      >
+                        onClick={() => handleDelete(question.q_id)}>
                         Delete
                       </Typography>
                     </TableCell>
@@ -275,8 +260,7 @@ const QuestionTable = ({
                       color: "text.secondary",
                       textAlign: "center",
                       py: 4,
-                    }}
-                  >
+                    }}>
                     No questions found
                   </TableCell>
                 </TableRow>
@@ -310,16 +294,14 @@ const GlassCard = ({ children, sx }) => (
           ? "rgba(17,24,39,0.7)"
           : theme.palette.background.paper,
 
-      backdropFilter:
-        theme.palette.mode === "dark" ? "blur(14px)" : "none",
+      backdropFilter: theme.palette.mode === "dark" ? "blur(14px)" : "none",
 
       border: `1px solid ${theme.palette.divider}`,
 
       borderRadius: 3,
       color: theme.palette.text.primary,
       ...sx,
-    })}
-  >
+    })}>
     {children}
   </Card>
 );

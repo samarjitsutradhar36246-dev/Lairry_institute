@@ -22,7 +22,7 @@ export default function CreateSubjects() {
   const [instituteExamsData, setinstituteExamsData] = useState(null);
   const [selectedExamId, setSelectedExamId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [touched, setTouched] = useState(false); // ✅ added
+  const [touched, setTouched] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -51,10 +51,7 @@ export default function CreateSubjects() {
 
   const [chapters, setChapters] = useState([]);
   const addChapter = () => {
-    setChapters((prev) => [
-      ...prev,
-      { className: "", chapterName: "", topics: "" },
-    ]);
+    setChapters((prev) => [...prev, { chapterName: "", topics: "" }]);
   };
 
   const updateChapter = (index, key, value) => {
@@ -68,14 +65,13 @@ export default function CreateSubjects() {
     total_chapter: "",
     description: "",
     icon: "",
-    status: "Active",
+    status: "Deactive",
   });
 
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  // ✅ errors object
   const errors = {
     subject_name: touched && !formData.subject_name.trim(),
     total_chapter: touched && !formData.total_chapter.trim(),
@@ -85,9 +81,7 @@ export default function CreateSubjects() {
     chapters: touched && chapters.length === 0,
   };
 
-  // ✅ per-chapter errors
   const chapterErrors = (index) => ({
-    className: touched && !chapters[index]?.className.trim(),
     chapterName: touched && !chapters[index]?.chapterName.trim(),
     topics: touched && !chapters[index]?.topics.trim(),
   });
@@ -104,7 +98,7 @@ export default function CreateSubjects() {
     if (!formData.total_chapter.trim()) {
       setSnackbar({
         open: true,
-        message: "Please fill in all the details❌",
+        message: "Please fill in all the details ❌",
         severity: "error",
       });
       return false;
@@ -135,14 +129,6 @@ export default function CreateSubjects() {
     }
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-      if (!ch.className.trim()) {
-        setSnackbar({
-          open: true,
-          message: `Please fill in all the details ${i + 1} ❌`,
-          severity: "error",
-        });
-        return false;
-      }
       if (!ch.chapterName.trim()) {
         setSnackbar({
           open: true,
@@ -164,25 +150,13 @@ export default function CreateSubjects() {
   };
 
   const buildChapterPayload = () => {
-    const grouped = {};
-    chapters.forEach((ch) => {
-      const classKey = ch.className;
-      if (!grouped[classKey]) {
-        grouped[classKey] = {
-          class: classKey,
-          biology_type: "Botany",
-          chapters: [],
-        };
-      }
-      grouped[classKey].chapters.push({
-        chapter_name: ch.chapterName,
-        topics: ch.topics
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      });
-    });
-    return Object.values(grouped);
+    return chapters.map((ch) => ({
+      chapter_name: ch.chapterName,
+      topics: ch.topics
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+    }));
   };
 
   return (
@@ -217,7 +191,7 @@ export default function CreateSubjects() {
             <button
               disabled={!selectedExamId || selectedExamId.trim() === ""}
               onClick={async () => {
-                setTouched(true); // ✅
+                setTouched(true);
                 if (!validateForm()) return;
 
                 try {
@@ -248,10 +222,10 @@ export default function CreateSubjects() {
                     total_chapter: "",
                     description: "",
                     icon: "Choose subject icon",
-                    status: "Active",
+                    status: "Deactive",
                   });
                   setChapters([]);
-                  setTouched(false); // ✅
+                  setTouched(false);
                 } catch (err) {
                   setSnackbar({
                     open: true,
@@ -283,7 +257,7 @@ export default function CreateSubjects() {
                 label="Select Exam"
                 value={selectedExamId}
                 onChange={(examId) => setSelectedExamId(examId)}
-                error={errors.selectedExamId ? "Please select an exam" : ""} // ✅
+                error={errors.selectedExamId ? "Please select an exam" : ""}
                 options={[
                   { label: "Select an exam", value: "" },
                   ...(instituteExamsData?.map((exam) => ({
@@ -302,7 +276,7 @@ export default function CreateSubjects() {
                   label="Subject Name"
                   value={formData.subject_name}
                   onChange={(v) => handleChange("subject_name", v.target.value)}
-                  error={errors.subject_name} // ✅
+                  error={errors.subject_name}
                   helperText={
                     errors.subject_name ? "Subject name is required" : ""
                   }
@@ -313,7 +287,7 @@ export default function CreateSubjects() {
                   onChange={(v) =>
                     handleChange("total_chapter", v.target.value)
                   }
-                  error={errors.total_chapter} // ✅
+                  error={errors.total_chapter}
                   helperText={
                     errors.total_chapter ? "Total chapter is required" : ""
                   }
@@ -327,7 +301,7 @@ export default function CreateSubjects() {
                   fullWidth
                   value={formData.description}
                   onChange={(v) => handleChange("description", v.target.value)}
-                  error={errors.description} // ✅
+                  error={errors.description}
                   helperText={
                     errors.description ? "Description is required" : ""
                   }
@@ -339,7 +313,7 @@ export default function CreateSubjects() {
                   label="Choose subject icon"
                   value={formData.icon}
                   onChange={(v) => handleChange("icon", v)}
-                  error={errors.icon ? "Please select an icon" : ""} // ✅
+                  error={errors.icon ? "Please select an icon" : ""}
                   options={[
                     { label: "Choose subject icon", value: "" },
                     { label: "Psychology", value: "psychology" },
@@ -352,11 +326,18 @@ export default function CreateSubjects() {
                   label="Status"
                   value={formData.status}
                   onChange={(v) => handleChange("status", v)}
-                  options={[
-                    { label: "Active", value: "Active" },
-                    { label: "Deactive", value: "Deactive" },
-                  ]}
+                  // options={[{ label: "Deactive", value: "Deactive" }]}
+                  options={["Deactive"]}
                 />
+              </TwoCol>
+              <TwoCol>
+                <p className="text-red-500 flex justify-center "></p>
+                <p className="text-red-500 flex justify-center ">
+                  <span>📜</span>
+                  <span>
+                    Create question paper to activate status automatically
+                  </span>
+                </p>
               </TwoCol>
             </GlassCard>
 
@@ -369,16 +350,16 @@ export default function CreateSubjects() {
                     Add chapters under this subject
                   </p>
                 </div>
-                <button
-                  onClick={addChapter}
-                  className="w-10 h-10 flex items-center justify-center rounded-lg
-                                        bg-[var(--primary)] hover:bg-[var(--secondary)] transition font-bold text-xl"
-                  title="Add Chapter">
-                  +
-                </button>
+                {chapters.length === 0 && (
+                  <button
+                    onClick={addChapter}
+                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-[var(--primary)] hover:bg-[var(--secondary)] transition font-bold text-xl"
+                    title="Add Chapter">
+                    +
+                  </button>
+                )}
               </div>
 
-              {/* ✅ Show error if no chapters added */}
               {errors.chapters && (
                 <p className="text-sm text-red-500 mb-3">
                   At least one chapter is required
@@ -394,34 +375,20 @@ export default function CreateSubjects() {
                       Chapter {index + 1}
                     </p>
 
-                    <TwoCol>
-                      <TextField
-                        label="Class"
-                        value={chapter.className}
-                        onChange={(e) =>
-                          updateChapter(index, "className", e.target.value)
-                        }
-                        error={chapterErrors(index).className} // ✅
-                        helperText={
-                          chapterErrors(index).className
-                            ? "Class is required"
-                            : ""
-                        }
-                      />
-                      <TextField
-                        label="Chapter Name"
-                        value={chapter.chapterName}
-                        onChange={(e) =>
-                          updateChapter(index, "chapterName", e.target.value)
-                        }
-                        error={chapterErrors(index).chapterName} // ✅
-                        helperText={
-                          chapterErrors(index).chapterName
-                            ? "Chapter name is required"
-                            : ""
-                        }
-                      />
-                    </TwoCol>
+                    <TextField
+                      label="Chapter Name"
+                      fullWidth
+                      value={chapter.chapterName}
+                      onChange={(e) =>
+                        updateChapter(index, "chapterName", e.target.value)
+                      }
+                      error={chapterErrors(index).chapterName}
+                      helperText={
+                        chapterErrors(index).chapterName
+                          ? "Chapter name is required"
+                          : ""
+                      }
+                    />
 
                     <div className="mt-4">
                       <TextField
@@ -434,7 +401,7 @@ export default function CreateSubjects() {
                           updateChapter(index, "topics", e.target.value)
                         }
                         placeholder="e.g. Motion, Laws of Motion, Applications"
-                        error={chapterErrors(index).topics} // ✅
+                        error={chapterErrors(index).topics}
                         helperText={
                           chapterErrors(index).topics
                             ? "Topics are required"
@@ -443,15 +410,21 @@ export default function CreateSubjects() {
                       />
                     </div>
 
-                    <div className="items-center pt-5 justify-center">
+                    <div className="flex items-center justify-center gap-4 pt-5">
                       <button
                         onClick={() =>
                           setChapters((prev) =>
                             prev.filter((_, i) => i !== index),
                           )
                         }
-                        className="text-xs text-red-400 hover:text-red-300 mt-2">
-                        Remove Chapter
+                        className="text-xs text-red-400 hover:text-red-300">
+                        − Remove Chapter
+                      </button>
+                      <span className="text-[var(--card-border)]">|</span>
+                      <button
+                        onClick={addChapter}
+                        className="text-xs text-[var(--primary)] hover:opacity-75">
+                        + Add Chapter
                       </button>
                     </div>
                   </div>
@@ -504,14 +477,22 @@ function Select({ label, options, value, onChange, error }) {
       <InputLabel id={labelId}>{label}</InputLabel>
       <MuiSelect
         labelId={labelId}
-        value={value ?? ""}
+        value={value}
         label={label}
         onChange={(e) => onChange(e.target.value)}>
-        {options.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
-          </MenuItem>
-        ))}
+        {options.map((option, index) => {
+          const val = typeof option === "object" ? option.value : option;
+          const label = typeof option === "object" ? option.label : option;
+          return (
+            <MenuItem key={index} value={val}>
+              {label}
+            </MenuItem>
+          );
+          // <MenuItem key={option} value={option}>
+          //   {/* {option.label} */}
+          //   {option || "Select"}
+          // </MenuItem>;
+        })}
       </MuiSelect>
       {error && <FormHelperText>{error}</FormHelperText>}
     </FormControl>

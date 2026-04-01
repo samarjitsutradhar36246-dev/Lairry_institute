@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useConfirm } from "../../utilities/useConfirm";
 import {
   Box,
   Typography,
@@ -13,7 +14,10 @@ import {
   Card,
   TableContainer,
   TablePagination,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import LoadingDialog from "../Loading Screen/LoadingDialog";
 
 const TestpaperTable = ({
   subjectsTestpaper,
@@ -21,19 +25,24 @@ const TestpaperTable = ({
   deleteSubjectAndTestpaperData,
   fetchSubjectsTestPapersData,
   setSubjectsTestpaper,
-  setLoading,
+
   selectedSubjectId,
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const [loading, setLoading] = useState(false);
   const testpapers = subjectsTestpaper?.TestPapersData ?? [];
 
   // Pagination Logic
   const paginatedData = useMemo(() => {
     return testpapers.slice(
       page * rowsPerPage,
-      page * rowsPerPage + rowsPerPage
+      page * rowsPerPage + rowsPerPage,
     );
   }, [testpapers, page, rowsPerPage]);
 
@@ -45,17 +54,49 @@ const TestpaperTable = ({
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+  const { confirm, ConfirmDialog } = useConfirm();
 
+  const handleDelete = async (id) => {
+    const ok = await confirm("Are you sure you want to delete?");
+
+    if (ok) {
+      {
+        setLoading(true);
+        await deleteSubjectAndTestpaperData(id);
+        const updatedData =
+          await fetchSubjectsTestPapersData(selectedSubjectId);
+        setSubjectsTestpaper(updatedData);
+        setLoading(false);
+        setSnackbar({
+          open: true,
+          message: "Test paper deleted succesfully ✅",
+          severity: "success",
+        });
+      }
+    }
+  };
   return (
     <GlassCard>
+      <LoadingDialog open={loading} />
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       <CardContent sx={{ p: 0 }}>
         {/* Header */}
         <Box
           sx={(theme) => ({
             p: 3,
             borderBottom: `1px solid ${theme.palette.divider}`,
-          })}
-        >
+          })}>
           <Typography fontSize={18} fontWeight={700}>
             All Test Papers
           </Typography>
@@ -85,8 +126,7 @@ const TestpaperTable = ({
                       fontSize: 12,
                       fontWeight: 600,
                       borderBottom: `1px solid ${theme.palette.divider}`,
-                    })}
-                  >
+                    })}>
                     {h}
                   </TableCell>
                 ))}
@@ -105,8 +145,7 @@ const TestpaperTable = ({
                           ? "rgba(59,130,246,0.05)"
                           : "rgba(37,99,235,0.04)",
                     },
-                  })}
-                >
+                  })}>
                   <TableCell>
                     <Typography fontWeight={600} fontSize={14}>
                       {testpaper.test_paper_name}
@@ -153,8 +192,8 @@ const TestpaperTable = ({
                               ? "rgba(34,197,94,0.15)"
                               : "rgba(22,163,74,0.1)"
                             : theme.palette.mode === "dark"
-                            ? "rgba(239,68,68,0.15)"
-                            : "rgba(220,38,38,0.1)",
+                              ? "rgba(239,68,68,0.15)"
+                              : "rgba(220,38,38,0.1)",
                         color:
                           testpaper.test_paper_status === "Active"
                             ? theme.palette.success.main
@@ -175,10 +214,9 @@ const TestpaperTable = ({
                       }}
                       onClick={() =>
                         navigate(
-                          `/institute/exam/subject/update-testpaper/${testpaper.id}`
+                          `/institute/exam/subject/update-testpaper/${testpaper.id}`,
                         )
-                      }
-                    >
+                      }>
                       Edit
                     </Typography>
 
@@ -190,25 +228,10 @@ const TestpaperTable = ({
                         fontWeight: 500,
                         "&:hover": { textDecoration: "underline" },
                       }}
-                      onClick={async () => {
-                        const confirmDelete = window.confirm(
-                          "Are you sure you want to delete this test paper?"
-                        );
-
-                        if (confirmDelete) {
-                          setLoading(true);
-                          await deleteSubjectAndTestpaperData(testpaper.id);
-                          const updatedData =
-                            await fetchSubjectsTestPapersData(
-                              selectedSubjectId
-                            );
-                          setSubjectsTestpaper(updatedData);
-                          setLoading(false);
-                        }
-                      }}
-                    >
+                      onClick={() => handleDelete(testpaper.id)}>
                       Delete
                     </Typography>
+                    <ConfirmDialog />
                   </TableCell>
                 </TableRow>
               ))}
@@ -217,8 +240,7 @@ const TestpaperTable = ({
                 <TableRow>
                   <TableCell
                     colSpan={10}
-                    sx={{ textAlign: "center", color: "text.secondary" }}
-                  >
+                    sx={{ textAlign: "center", color: "text.secondary" }}>
                     No test papers found
                   </TableCell>
                 </TableRow>
@@ -252,14 +274,12 @@ const GlassCard = ({ children, sx }) => (
         theme.palette.mode === "dark"
           ? "rgba(17,24,39,0.7)"
           : theme.palette.background.paper,
-      backdropFilter:
-        theme.palette.mode === "dark" ? "blur(14px)" : "none",
+      backdropFilter: theme.palette.mode === "dark" ? "blur(14px)" : "none",
       border: `1px solid ${theme.palette.divider}`,
       borderRadius: 3,
       color: theme.palette.text.primary,
       ...sx,
-    })}
-  >
+    })}>
     {children}
   </Card>
 );

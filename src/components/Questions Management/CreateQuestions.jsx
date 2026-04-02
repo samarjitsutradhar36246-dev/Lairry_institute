@@ -20,18 +20,28 @@ import {
   Snackbar,
   Alert,
   FormHelperText,
+  Radio,
 } from "@mui/material";
 
 import LoadingDialog from "../Loading Screen/LoadingDialog";
 
 export default function CreateQuestions() {
-  const { user, fetchTestpaperIdAndName, createQuestionForTestpaper } =
-    useSupabase();
+  const {
+    user,
+    fetchTestpaperIdAndName,
+    createQuestionForTestpaper,
+    fetchSubjectsTestPapersQuestionsData,
+  } = useSupabase();
 
   const [instituteTestPapersData, setInstituteTestPapersData] = useState([]);
   const [selectedTestPaperId, setSelectedTestPaperId] = useState("");
   const [loading, setLoading] = useState(false);
   const [questionType, setQuestionType] = useState("MCQ");
+
+  const [testData, setTestData] = useState(null);
+  const [questionCount, setQuestionCount] = useState(0);
+  const [marksCount, setMarksCount] = useState(0);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -83,6 +93,31 @@ export default function CreateQuestions() {
     if (user?.auth_user_id) loadExamdata();
   }, [user?.auth_user_id]);
 
+  useEffect(() => {
+    if (!selectedTestPaperId) {
+      setTestData(null);
+      setQuestionCount(0);
+      return;
+    }
+    const loadTestpaperQuestiondata = async () => {
+      try {
+        const data =
+          await fetchSubjectsTestPapersQuestionsData(selectedTestPaperId);
+        if (!data?.QuestionsData) return;
+        setQuestionCount(data?.QuestionsData?.length);
+      } catch (err) {
+        setSnackbar({
+          open: true,
+          message: err.message || "Failed to fetch question data ❌",
+          severity: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTestpaperQuestiondata();
+  }, [selectedTestPaperId]);
+  console.log(questionCount);
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -131,14 +166,21 @@ export default function CreateQuestions() {
     return true;
   };
 
-  const handleCreateQuestions = async () => {
-    setTouched(true); // ✅ Trigger all error highlights
+  const handleCreateQuestionsWithData = async (questionsData) => {
+    if (!selectedTestPaperId) return;
 
-    if (!validateForm() || !selectedTestPaperId) return;
+    if (questionsData.length < testData.total_questions_per_test_paper) {
+      setSnackbar({
+        open: true,
+        message: `Please fill all ${testData.total_questions_per_test_paper} questions. Only ${questionsData.length} added ❌`,
+        severity: "error",
+      });
+      return;
+    }
 
     try {
       setLoading(true);
-      for (const q of questions) {
+      for (const q of questionsData) {
         await createQuestionForTestpaper({
           ...q,
           test_paper_id: selectedTestPaperId,
@@ -151,23 +193,25 @@ export default function CreateQuestions() {
       }
       setSnackbar({
         open: true,
-        message: `${questions.length} questions created successfully ✅`,
+        message: `${questionsData.length} questions created successfully ✅`,
         severity: "success",
       });
       setFormData(initialState);
-      setQuestions([initialState]);
-      setTouched(false); // ✅ Reset errors after success
+      setQuestions([{ ...initialState }]);
+      setCurrentIndex(0);
+      setTouched(false);
+      setQuestionCount((prev) => prev + questionsData.length); // ✅ sirf ye line add ki
     } catch (err) {
       setSnackbar({
         open: true,
-        message: "Error occurred in creating questions",
+        message: "Error occurred in creating questions ❌",
         severity: "error",
       });
     } finally {
       setLoading(false);
     }
   };
-
+  console.log(testData);
   return (
     <Container
       maxWidth="xl"
@@ -238,7 +282,7 @@ export default function CreateQuestions() {
               borderRadius: 2,
               textTransform: "none",
             }}
-            onClick={handleCreateQuestions}>
+            onClick={() => handleCreateQuestionsWithData(questions)}>
             Create Questions
           </Button>
         </Stack>
@@ -256,8 +300,14 @@ export default function CreateQuestions() {
           <Select
             value={selectedTestPaperId}
             label="Select Test Paper"
-            onChange={(e) => setSelectedTestPaperId(e.target.value)}>
-            <MenuItem value="">Select a test paper</MenuItem>
+            onChange={(e) => {
+              const selectedId = e.target.value;
+              setSelectedTestPaperId(selectedId);
+              const selectedTestDetails = instituteTestPapersData.find(
+                (tp) => tp.id === selectedId,
+              );
+              setTestData(selectedTestDetails || null); // ✅ Safe, no re-render issue
+            }}>
             {instituteTestPapersData.map((tp) => (
               <MenuItem key={tp.id} value={tp.id}>
                 {tp.test_paper_name}
@@ -268,219 +318,404 @@ export default function CreateQuestions() {
             <FormHelperText>Please select a test paper</FormHelperText>
           )}
         </FormControl>
+        {instituteTestPapersData
+          .filter((tp) => tp.id === selectedTestPaperId)
+          .map((tp) => (
+            <Grid
+              key={tp.id}
+              value={tp.id}
+              size={{ xs: 12, md: 6 }}
+              sx={{ mt: 3, display: "flex" }}
+              className=" justify-between">
+              <TextField label="Total Marks" value={tp.total_marks} disabled />
+              <TextField
+                label="Total time"
+                value={
+                  tp.total_time_per_test_paper_in_minute *
+                  tp.total_questions_per_test_paper
+                }
+                disabled
+              />
+              <TextField
+                label="Total Questions"
+                value={tp.total_questions_per_test_paper}
+                disabled
+              />
+            </Grid>
+          ))}
       </Card>
 
       {/* QUESTION FORM */}
-      <Card sx={{ p: 3 }}>
-        <Typography fontWeight={700} mb={2}>
-          Question {currentIndex + 1} of {questions.length}
-        </Typography>
 
-        <TextField
-          fullWidth
-          label="Enter Question"
-          value={formData.question_text}
-          onChange={(e) => handleChange("question_text", e.target.value)}
-          sx={{ mb: 3 }}
-          error={errors.question_text} // ✅
-          helperText={errors.question_text ? "Question text is required" : ""}
-        />
+      {!selectedTestPaperId ? (
+        // Show nothing or a prompt to select a test paper
+        <Box>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            align="center"
+            mt={5}>
+            Please select a test paper to get started.
+          </Typography>
+        </Box>
+      ) : questionCount >= testData?.total_questions_per_test_paper ? (
+        <Box>
+          <Typography variant="h6" color="text.secondary" align="center" mt={5}>
+            All questions for this test paper have been created. So You cannot
+            create more question for this test paper. If you want to create more
+            question then go to create test paper page and increase the number
+            of questions for this test paper.
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          <Card sx={{ p: 3 }}>
+            <Typography fontWeight={700} mb={2}>
+              Question {currentIndex + 1} of {questions.length}
+            </Typography>
 
-        <Tabs
-          value={questionType}
-          onChange={handleTabChange}
-          sx={(theme) => ({
-            mb: 3,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            "& .MuiTab-root": { color: theme.palette.text.secondary },
-            "& .Mui-selected": {
-              color: theme.palette.primary.main,
-              fontWeight: 600,
-            },
-          })}>
-          <Tab label="MCQ" value="MCQ" />
-          <Tab label="Numerical" value="Numerical" />
-        </Tabs>
+            <TextField
+              fullWidth
+              label="Enter Question"
+              value={formData.question_text}
+              onChange={(e) => handleChange("question_text", e.target.value)}
+              sx={{ mb: 3 }}
+              error={errors.question_text} // ✅
+              helperText={
+                errors.question_text ? "Question text is required" : ""
+              }
+            />
 
-        {questionType === "MCQ" && (
-          <>
-            <Grid container spacing={2} sx={{ mb: 1 }}>
-              {OPTION_KEYS.map((opt, idx) => (
-                <Grid size={{ xs: 12, md: 6 }} key={opt}>
-                  <TextField
-                    fullWidth
-                    label={`Option ${opt}`}
-                    value={formData.options[idx] || ""}
-                    onChange={(e) => {
-                      const updated = [...formData.options];
-                      updated[idx] = e.target.value;
-                      handleChange("options", updated);
-                    }}
-                    // ✅ Mark first two options as required
-                    error={errors.options && !formData.options[idx]?.trim()}
-                    helperText={
-                      errors.options && !formData.options[idx]?.trim()
-                        ? "Required"
-                        : ""
-                    }
-                  />
+            <Tabs
+              value={questionType}
+              onChange={handleTabChange}
+              sx={(theme) => ({
+                mb: 3,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+                "& .MuiTab-root": { color: theme.palette.text.secondary },
+                "& .Mui-selected": {
+                  color: theme.palette.primary.main,
+                  fontWeight: 600,
+                },
+              })}>
+              <Tab label="MCQ" value="MCQ" />
+              <Tab label="Numerical" value="Numerical" />
+            </Tabs>
+
+            {questionType === "MCQ" && (
+              <>
+                <Grid container spacing={2} sx={{ mb: 1 }}>
+                  {OPTION_KEYS.map((opt, idx) => (
+                    <Grid size={{ xs: 12, md: 6 }} key={opt}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        {/* Radio button — clicking it sets correct_option_s to this option's text */}
+                        <Radio
+                          checked={
+                            !!formData.options[idx]?.trim() &&
+                            formData.correct_option_s === formData.options[idx]
+                          }
+                          onChange={() => {
+                            if (formData.options[idx]?.trim()) {
+                              handleChange(
+                                "correct_option_s",
+                                formData.options[idx],
+                              );
+                            }
+                          }}
+                          value={formData.options[idx] || ""}
+                          disabled={!formData.options[idx]?.trim()}
+                          color="primary"
+                          title={`Mark Option ${opt} as correct`}
+                        />
+                        <TextField
+                          fullWidth
+                          label={`Option ${opt}`}
+                          value={formData.options[idx] || ""}
+                          onChange={(e) => {
+                            const updated = [...formData.options];
+                            updated[idx] = e.target.value;
+                            handleChange("options", updated);
+
+                            // If this option was selected as correct, keep correct_option_s in sync
+                            if (
+                              formData.correct_option_s ===
+                              formData.options[idx]
+                            ) {
+                              handleChange("correct_option_s", e.target.value);
+                            }
+                          }}
+                          error={
+                            errors.options && !formData.options[idx]?.trim()
+                          }
+                          helperText={
+                            errors.options && !formData.options[idx]?.trim()
+                              ? "Required"
+                              : ""
+                          }
+                        />
+                      </Box>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
+                {errors.options && (
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{ mb: 2, display: "block" }}>
+                    Fill all the options
+                  </Typography>
+                )}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mb: 2, display: "block" }}>
+                  💡 Click the radio button next to the correct option to
+                  auto-fill the answer.
+                </Typography>
+              </>
+            )}
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Question Instruction"
+                  value={formData.question_instruction}
+                  disabled
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Correct Answer"
+                  value={formData.correct_option_s}
+                  onChange={
+                    questionType === "Numerical"
+                      ? (e) => handleChange("correct_option_s", e.target.value)
+                      : undefined // MCQ: read-only, set via radio
+                  }
+                  InputProps={{
+                    readOnly: questionType === "MCQ",
+                  }}
+                  placeholder={
+                    questionType === "MCQ"
+                      ? "Auto-filled when you select a radio button"
+                      : "Type the correct numerical answer"
+                  }
+                  error={errors.correct_option_s}
+                  helperText={
+                    errors.correct_option_s
+                      ? "Correct answer is required"
+                      : questionType === "MCQ"
+                        ? "Select a radio button above to auto-fill"
+                        : ""
+                  }
+                />
+              </Grid>
             </Grid>
-            {errors.options && (
+
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Positive Mark"
+                  value={formData.positive_mark}
+                  onChange={(e) => {
+                    const val = Math.max(0, Number(e.target.value));
+                    handleChange("positive_mark", String(val));
+                  }}
+                  error={errors.positive_mark} // ✅
+                  helperText={
+                    errors.positive_mark
+                      ? "Positive mark is required"
+                      : "Only positive numbers allowed"
+                  }
+                  InputProps={{
+                    inputProps: { min: 0, max: 100, step: 1 },
+                    onKeyDown: (e) => {
+                      if (e.key === "-" || e.key === "e") e.preventDefault();
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Negative Mark"
+                  type="number"
+                  value={formData.negative_mark}
+                  onChange={(e) => {
+                    const raw = Math.abs(Number(e.target.value));
+                    handleChange(
+                      "negative_mark",
+                      raw === 0 ? "" : String(-raw),
+                    );
+                  }}
+                  error={errors.negative_mark} // ✅
+                  helperText={
+                    errors.negative_mark
+                      ? "Negative mark is required"
+                      : "Only numbers are allowed"
+                  }
+                  InputProps={{
+                    inputProps: { min: -10, max: 0, step: 1 },
+                    onKeyDown: (e) => {
+                      if (e.key === "e") e.preventDefault();
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Expected Time for Each Question In Seconds"
+                  type="number"
+                  value={formData.expected_time_for_each_question}
+                  onChange={(e) =>
+                    handleChange(
+                      "expected_time_for_each_question",
+                      e.target.value,
+                    )
+                  }
+                  error={errors.expected_time_for_each_question} // ✅
+                  helperText={
+                    errors.expected_time_for_each_question
+                      ? "Expected time is required"
+                      : "Only numbers are allowed"
+                  }
+                  InputProps={{
+                    inputProps: { min: 0, max: 200, step: 1 },
+                    onKeyDown: (e) => {
+                      if (e.key === "-" || e.key === "e") e.preventDefault();
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Chapter Name"
+                  value={formData.chapter_name}
+                  onChange={(e) => handleChange("chapter_name", e.target.value)}
+                  error={errors.chapter_name} // ✅
+                  helperText={
+                    errors.chapter_name ? "Chapter name is required" : ""
+                  }
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Topic Name"
+                  value={formData.topic_name}
+                  onChange={(e) => handleChange("topic_name", e.target.value)}
+                  error={errors.topic_name} // ✅
+                  helperText={errors.topic_name ? "Topic name is required" : ""}
+                />
+              </Grid>
+            </Grid>
+          </Card>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
+              mt: 5,
+            }}>
+            {testData && (
               <Typography
                 variant="caption"
-                color="error"
-                sx={{ mb: 2, display: "block" }}>
-                Fill all the options
+                color={
+                  questions.length >= testData.total_questions_per_test_paper
+                    ? "success.main"
+                    : "text.secondary"
+                }>
+                {questions.filter((q) => q.question_text.trim()).length} /{" "}
+                {testData.total_questions_per_test_paper} questions filled
               </Typography>
             )}
-          </>
-        )}
 
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Question Instruction"
-              value={formData.question_instruction}
-              disabled
-            />
-          </Grid>
+            <Box
+              sx={{ display: "flex", justifyContent: "center", gap: 5, mt: 5 }}>
+              {/* PREVIOUS BUTTON */}
+              <Button
+                variant="contained"
+                disabled={currentIndex === 0}
+                onClick={() => {
+                  const updated = [...questions];
+                  updated[currentIndex] = formData;
+                  setQuestions(updated);
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Correct Answer"
-              value={formData.correct_option_s}
-              onChange={(e) => handleChange("correct_option_s", e.target.value)}
-              error={errors.correct_option_s} // ✅
-              helperText={
-                errors.correct_option_s ? "Correct answer is required" : ""
-              }
-            />
-          </Grid>
-        </Grid>
+                  const prevIndex = currentIndex - 1;
+                  setCurrentIndex(prevIndex);
+                  setFormData(updated[prevIndex]);
+                  setTouched(false);
+                }}>
+                ← Previous Question
+              </Button>
 
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Positive Mark"
-              value={formData.positive_mark}
-              onChange={(e) => {
-                const val = Math.max(0, Number(e.target.value));
-                handleChange("positive_mark", String(val));
-              }}
-              error={errors.positive_mark} // ✅
-              helperText={
-                errors.positive_mark
-                  ? "Positive mark is required"
-                  : "Only positive numbers allowed"
-              }
-              InputProps={{
-                inputProps: { min: 0, max: 100, step: 1 },
-                onKeyDown: (e) => {
-                  if (e.key === "-" || e.key === "e") e.preventDefault();
-                },
-              }}
-            />
-          </Grid>
+              {/* NEXT or FINISH BUTTON */}
+              {testData &&
+              currentIndex === testData.total_questions_per_test_paper - 1 ? (
+                // ✅ On last question — show Save & Finish instead
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => {
+                    setTouched(true);
+                    if (!validateForm()) return;
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
-              label="Negative Mark"
-              type="number"
-              value={formData.negative_mark}
-              onChange={(e) => {
-                const raw = Math.abs(Number(e.target.value));
-                handleChange("negative_mark", raw === 0 ? "" : String(-raw));
-              }}
-              error={errors.negative_mark} // ✅
-              helperText={
-                errors.negative_mark
-                  ? "Negative mark is required"
-                  : "Only numbers are allowed"
-              }
-              InputProps={{
-                inputProps: { min: -10, max: 0, step: 1 },
-                onKeyDown: (e) => {
-                  if (e.key === "e") e.preventDefault();
-                },
-              }}
-            />
-          </Grid>
+                    // ✅ Save the last question into the array
+                    const updated = [...questions];
+                    updated[currentIndex] = formData;
+                    setQuestions(updated);
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
-              label="Expected Time for Each Question In Seconds"
-              type="number"
-              value={formData.expected_time_for_each_question}
-              onChange={(e) =>
-                handleChange("expected_time_for_each_question", e.target.value)
-              }
-              error={errors.expected_time_for_each_question} // ✅
-              helperText={
-                errors.expected_time_for_each_question
-                  ? "Expected time is required"
-                  : "Only numbers are allowed"
-              }
-              InputProps={{
-                inputProps: { min: 0, max: 200, step: 1 },
-                onKeyDown: (e) => {
-                  if (e.key === "-" || e.key === "e") e.preventDefault();
-                },
-              }}
-            />
-          </Grid>
-        </Grid>
+                    // ✅ Now submit — use updated directly since setQuestions is async
+                    handleCreateQuestionsWithData(updated);
+                  }}>
+                  Save & Finish ✅
+                </Button>
+              ) : (
+                // ✅ Normal Next Question button
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setTouched(true);
+                    if (!validateForm()) return;
 
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Chapter Name"
-              value={formData.chapter_name}
-              onChange={(e) => handleChange("chapter_name", e.target.value)}
-              error={errors.chapter_name} // ✅
-              helperText={errors.chapter_name ? "Chapter name is required" : ""}
-            />
-          </Grid>
+                    const updated = [...questions];
+                    updated[currentIndex] = formData;
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Topic Name"
-              value={formData.topic_name}
-              onChange={(e) => handleChange("topic_name", e.target.value)}
-              error={errors.topic_name} // ✅
-              helperText={errors.topic_name ? "Topic name is required" : ""}
-            />
-          </Grid>
-        </Grid>
-      </Card>
+                    // ✅ Push new blank slot only if next slot doesn't exist yet
+                    if (currentIndex + 1 === updated.length) {
+                      updated.push({ ...initialState });
+                    }
 
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-        <Button
-          variant="contained"
-          onClick={() => {
-            setTouched(true); // ✅ Also trigger errors on Next Question
+                    setQuestions(updated);
+                    console.log(updated);
 
-            if (!validateForm()) return;
-
-            const updated = [...questions];
-            updated[currentIndex] = formData;
-            setQuestions(updated);
-            setCurrentIndex((i) => i + 1);
-            setFormData(initialState);
-            setTouched(false); // ✅ Reset errors for the next question
-          }}>
-          Next Question →
-        </Button>
-      </Box>
+                    const nextIndex = currentIndex + 1;
+                    setCurrentIndex(nextIndex);
+                    setFormData(updated[nextIndex]);
+                    setTouched(false);
+                  }}>
+                  Next Question →
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </>
+      )}
     </Container>
   );
 }

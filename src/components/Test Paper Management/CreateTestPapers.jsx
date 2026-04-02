@@ -51,7 +51,7 @@ export default function CreateTestPapers() {
     test_paper_rules: "",
     total_marks: "",
     test_paper_marking_scheme: "",
-     total_questions_per_test_paper: "",
+    total_questions_per_test_paper: "",
     test_paper_language: "English",
     test_paper_difficulty: "Easy",
     total_time_per_test_paper_in_minute: "",
@@ -69,13 +69,13 @@ export default function CreateTestPapers() {
     total_marks: touched && !formData.total_marks.trim(),
     test_paper_marking_scheme:
       touched && !formData.test_paper_marking_scheme.trim(),
-     total_questions_per_test_paper:touched && !formData.total_questions_per_test_paper.trim(),
+    total_questions_per_test_paper:
+      touched && !formData.total_questions_per_test_paper.trim(),
     test_paper_language: touched && !formData.test_paper_language.trim(),
     test_paper_difficulty: touched && !formData.test_paper_difficulty.trim(),
     total_time_per_test_paper_in_minute:
       touched && !formData.total_time_per_test_paper_in_minute.trim(),
-    test_paper_scheduled_at:
-      touched && !formData.test_paper_scheduled_at, // 👈 add this
+    test_paper_scheduled_at: touched && !formData.test_paper_scheduled_at, // 👈 add this
   };
 
   const validateForm = () => {
@@ -88,7 +88,7 @@ export default function CreateTestPapers() {
       !formData.test_paper_language.trim() ||
       !formData.test_paper_difficulty.trim() ||
       !formData.total_time_per_test_paper_in_minute.trim() ||
-      !formData.test_paper_scheduled_at|| // 👈 add this
+      !formData.test_paper_scheduled_at || // 👈 add this
       !formData.total_questions_per_test_paper.trim()
     ) {
       setSnackbar({
@@ -99,8 +99,6 @@ export default function CreateTestPapers() {
 
       return false;
     }
-
-   
 
     return true;
   };
@@ -149,15 +147,17 @@ export default function CreateTestPapers() {
               onClick={async () => {
                 setTouched(true); // ✅ add this
                 if (!validateForm()) return;
-const totalDurationInMinutes =
-  Number(formData.total_time_per_test_paper_in_minute) *
-  Number(formData.total_questions_per_test_paper);
+                const totalDurationInMinutes =
+                  Number(formData.total_time_per_test_paper_in_minute) *
+                  Number(formData.total_questions_per_test_paper);
 
-const testStartDate = new Date(formData.test_paper_scheduled_at);
+                const testStartDate = new Date(
+                  formData.test_paper_scheduled_at,
+                );
 
-const testEndDate = new Date(
-  testStartDate.getTime() + totalDurationInMinutes * 60 * 1000
-);
+                const testEndDate = new Date(
+                  testStartDate.getTime() + totalDurationInMinutes * 60 * 1000,
+                );
                 try {
                   const payload = {
                     subject_id: selectedSubjectId,
@@ -174,8 +174,8 @@ const testEndDate = new Date(
                       formData.total_time_per_test_paper_in_minute,
                     test_paper_difficulty: formData.test_paper_difficulty,
                     test_paper_status: formData.test_paper_status,
-                   test_start_at: testStartDate.toISOString(),
-  test_end_at: testEndDate.toISOString(),   // 👈 newly added
+                    test_start_at: testStartDate.toISOString(),
+                    test_end_at: testEndDate.toISOString(), // 👈 newly added
                   };
                   console.log("scheduled", formData.test_paper_scheduled_at);
                   setLoading(true);
@@ -193,13 +193,15 @@ const testEndDate = new Date(
                     test_paper_rules: "",
                     total_marks: "",
                     test_paper_marking_scheme: "",
-                     total_questions_per_test_paper: "",
+                    total_questions_per_test_paper: "",
                     test_paper_language: "English",
                     test_paper_difficulty: "Easy",
                     total_time_per_test_paper_in_minute: "",
                     test_paper_status: "Deactivate",
                     test_paper_scheduled_at: "", // ✅ ADD THIS
                   });
+                  setTouched(false); // ✅ NEW
+                  setSelectedSubjectId(""); // ✅ NEW// to reset the subject selection after creation
                 } catch (err) {
                   setSnackbar({
                     open: true,
@@ -357,7 +359,7 @@ const testEndDate = new Date(
                   options={["English"]}
                 />
               </div>
-             
+
               <TwoCol>
                 <TextField
                   label="Total Time per Question (in minute)"
@@ -519,8 +521,6 @@ function TwoCol({ children }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">{children}</div>
   );
 }
-
-
 
 function Select({ label, options, value, onChange, error }) {
   const labelId = `${label.replace(/\s+/g, "-").toLowerCase()}-label`;

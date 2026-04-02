@@ -52,73 +52,84 @@ export default function UpdateSubjectsTestPaper() {
     test_paper_difficulty: touched && !formData.test_paper_difficulty.trim(),
     total_time_per_test_paper_in_minute:
       touched && !formData.total_time_per_test_paper_in_minute.trim(),
+    test_paper_scheduled_at: touched && !formData.test_paper_scheduled_at, // 👈 add this,
   };
 
   const validateForm = () => {
-    if (!formData.test_paper_name.trim()) {
+    if (
+      !formData.test_paper_name.trim() ||
+      !formData.test_paper_description.trim() ||
+      !formData.test_paper_rules.trim() ||
+      !formData.total_marks.trim() ||
+      !formData.test_paper_marking_scheme.trim() ||
+      !formData.test_paper_difficulty.trim() ||
+      !formData.total_time_per_test_paper_in_minute.trim() ||
+      !formData.test_paper_scheduled_at || // 👈 add this
+      !formData.total_questions_per_test_paper.trim()
+    ) {
       setSnackbar({
         open: true,
-        message: "Test Paper name is required ❌",
+        message: "Please fill in all required fields ❌",
         severity: "error",
       });
       return false;
     }
-    if (!formData.test_paper_description.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Test paper description is required ❌",
-        severity: "error",
-      });
-      return false;
-    }
-    if (!formData.test_paper_rules.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Test paper rules is required ❌",
-        severity: "error",
-      });
-      return false;
-    }
-    if (!formData.total_marks) {
-      setSnackbar({
-        open: true,
-        message: "Total marks for this test paper is required ❌",
-        severity: "error",
-      });
-      return false;
-    }
-    if (!formData.test_paper_marking_scheme) {
-      setSnackbar({
-        open: true,
-        message: "Test paper marking scheme is required ❌",
-        severity: "error",
-      });
-      return false;
-    }
-    if (!formData.total_questions_per_test_paper.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Total number of Questions in this test paper ❌",
-        severity: "error",
-      });
-      return false;
-    }
-    if (!formData.test_paper_difficulty.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Difficulty Level for this test paper is required ❌",
-        severity: "error",
-      });
-      return false;
-    }
-    if (!formData.total_time_per_test_paper_in_minute.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Total time for this test paper is required ❌",
-        severity: "error",
-      });
-      return false;
-    }
+    // if (!formData.test_paper_description.trim()) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Test paper description is required ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
+    // if (!formData.test_paper_rules.trim()) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Test paper rules is required ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
+    // if (!formData.total_marks) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Total marks for this test paper is required ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
+    // if (!formData.test_paper_marking_scheme) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Test paper marking scheme is required ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
+    // if (!formData.total_questions_per_test_paper.trim()) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Total number of Questions in this test paper ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
+    // if (!formData.test_paper_difficulty.trim()) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Difficulty Level for this test paper is required ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
+    // if (!formData.total_time_per_test_paper_in_minute.trim()) {
+    //   setSnackbar({
+    //     open: true,
+    //     message: "Total time for this test paper is required ❌",
+    //     severity: "error",
+    //   });
+    //   return false;
+    // }
     return true;
   };
 
@@ -201,7 +212,16 @@ export default function UpdateSubjectsTestPaper() {
               onClick={async () => {
                 setTouched(true); // ✅
                 if (!validateForm()) return;
+                const totalDurationInMinutes =
+                  Number(formData.total_time_per_test_paper_in_minute) *
+                  Number(formData.total_questions_per_test_paper);
 
+                const testStartDate = new Date(
+                  formData.test_paper_scheduled_at,
+                );
+                const testEndDate = new Date(
+                  testStartDate.getTime() + totalDurationInMinutes * 60 * 1000,
+                );
                 try {
                   const payload = {
                     test_paper_name: formData.test_paper_name,
@@ -217,6 +237,8 @@ export default function UpdateSubjectsTestPaper() {
                     total_time_per_test_paper_in_minute:
                       formData.total_time_per_test_paper_in_minute,
                     test_paper_status: formData.test_paper_status,
+                    test_start_at: testStartDate.toISOString(),
+                    test_end_at: testEndDate.toISOString(),
                   };
                   setLoading(true);
                   await updateInstituteExamSubjectTestpaper(

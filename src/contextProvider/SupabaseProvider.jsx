@@ -10,7 +10,7 @@ const SupabaseContext = createContext(null);
    2. Provider Component
 --------------------------------------------- */
 export const SupabaseProvider = ({ children }) => {
-  const [user, setUser] = useState(null);       // full institute row
+  const [user, setUser] = useState(null); // full institute row
   const [session, setSession] = useState(null); // Supabase session
   const [loading, setLoading] = useState(true);
   const syncingRef = useRef(false);
@@ -28,20 +28,21 @@ export const SupabaseProvider = ({ children }) => {
 
       if (error || !inst || inst.account_status !== "ACTIVE") {
         await supabase.auth.signOut();
-        setUser(prev => (prev ? null : prev)); // only update if changed
-        setSession(prev => (prev ? null : prev));
+        setUser((prev) => (prev ? null : prev)); // only update if changed
+        setSession((prev) => (prev ? null : prev));
       } else {
-        setUser(prev => (JSON.stringify(prev) === JSON.stringify(inst) ? prev : inst));
+        setUser((prev) =>
+          JSON.stringify(prev) === JSON.stringify(inst) ? prev : inst,
+        );
       }
     } catch {
-      setUser(prev => (prev ? null : prev));
-      setSession(prev => (prev ? null : prev));
+      setUser((prev) => (prev ? null : prev));
+      setSession((prev) => (prev ? null : prev));
     } finally {
       setLoading(false);
       syncingRef.current = false;
     }
   };
-
 
   useEffect(() => {
     const init = async () => {
@@ -61,7 +62,7 @@ export const SupabaseProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(prev => {
+      setSession((prev) => {
         // Only update if access_token changed
         if (prev?.access_token === session?.access_token) return prev;
         return session;
@@ -77,56 +78,55 @@ export const SupabaseProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
- const signupInstitute = async ({ email, temp_password, password }) => {
-  const cleanedEmail = String(email ?? "").trim().toLowerCase();
-  const safePassword = String(password ?? "");
+  const signupInstitute = async ({ email, temp_password, password }) => {
+    const cleanedEmail = String(email ?? "")
+      .trim()
+      .toLowerCase();
+    const safePassword = String(password ?? "");
 
-  // 1️⃣ Fetch institute
-  const { data: inst, error: fetchError } = await supabase
-    .from("institutes")
-    .select("*")
-    .eq("institute_email", cleanedEmail)
-    .maybeSingle();
+    // 1️⃣ Fetch institute
+    const { data: inst, error: fetchError } = await supabase
+      .from("institutes")
+      .select("*")
+      .eq("institute_email", cleanedEmail)
+      .maybeSingle();
 
-  if (fetchError) throw fetchError;
-  if (!inst) throw new Error("Invalid email or not invited");
-  if (inst.account_status !== "Invited") throw new Error("Already signed up");
-  if (inst.password !== temp_password) throw new Error("Temp password incorrect");
+    if (fetchError) throw fetchError;
+    if (!inst) throw new Error("Invalid email or not invited");
+    if (inst.account_status !== "Invited") throw new Error("Already signed up");
+    if (inst.password !== temp_password)
+      throw new Error("Temp password incorrect");
 
-  // 2️⃣ Create auth user
-  const { data: authData, error: signUpError } =
-    await supabase.auth.signUp({
+    // 2️⃣ Create auth user
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: cleanedEmail,
       password: safePassword,
     });
 
-  if (signUpError) throw signUpError;
+    if (signUpError) throw signUpError;
 
-  // 3️⃣ Update institutes table
-  const { error: updateError } = await supabase
-    .from("institutes")
-    .update({
-      auth_user_id: authData.user.id,
-      account_status: "ACTIVE",
-      activated_at: new Date().toISOString(),
-    })
-    .eq("institute_email", cleanedEmail);
+    // 3️⃣ Update institutes table
+    const { error: updateError } = await supabase
+      .from("institutes")
+      .update({
+        auth_user_id: authData.user.id,
+        account_status: "ACTIVE",
+        activated_at: new Date().toISOString(),
+      })
+      .eq("institute_email", cleanedEmail);
 
-  if (updateError) throw updateError;
+    if (updateError) throw updateError;
 
-  
+    // 6️⃣ Update KPI with error check
+    const { error: kpiError } = await supabase.rpc("update_kpi", {
+      kpi_name: "active_institutes",
+      delta: 1,
+    });
 
-  // 6️⃣ Update KPI with error check
-  const { error: kpiError } = await supabase.rpc("update_kpi", {
-    kpi_name: "active_institutes",
-    delta: 1,
-  });
+    if (kpiError) throw kpiError;
 
-  if (kpiError) throw kpiError;
-
-  return authData;
-};
-
+    return authData;
+  };
 
   const loginUser = async (email, password) => {
     const cleanedEmail = email.trim().toLowerCase();
@@ -191,9 +191,9 @@ export const SupabaseProvider = ({ children }) => {
 
     const { error } = await supabase
       .from("institute_notification")
-      .update({ is_read: isRead })      
+      .update({ is_read: isRead })
       .eq("id", id)
-      .eq("user_id",user.auth_user_id)
+      .eq("user_id", user.auth_user_id);
 
     if (error) throw error;
   };
@@ -216,7 +216,9 @@ export const SupabaseProvider = ({ children }) => {
 
     const { data, error } = await supabase
       .from("institutes_data")
-      .select("institute_name,institute_description,profile_image,phone_number,email,institute_id")
+      .select(
+        "institute_name,institute_description,profile_image,phone_number,email,institute_id",
+      )
       .eq("institute_id", userId)
       .single();
 
@@ -231,7 +233,7 @@ export const SupabaseProvider = ({ children }) => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `profile-images/${fileName}`;
-    
+
     // 1️⃣ Upload to storage
     const { error: uploadError } = await supabase.storage
       .from("Institute Uploads") // ⬅️ create this bucket
@@ -239,7 +241,6 @@ export const SupabaseProvider = ({ children }) => {
         cacheControl: "3600",
         upsert: true,
         contentType: file.type, // ✅ important
-
       });
 
     if (uploadError) throw uploadError;
@@ -250,14 +251,13 @@ export const SupabaseProvider = ({ children }) => {
       .getPublicUrl(filePath);
 
     const imageUrl = data.publicUrl;
-    
+
     // 3️⃣ Update user profile image to public.users table
     const { data: updateImage, error: updateError } = await supabase
       .from("institutes_data")
       .update({ profile_image: imageUrl })
       .eq("institute_id", userId)
       .select();
-    
 
     if (updateError) throw updateError;
     if (!data || data.length === 0) {
@@ -267,13 +267,11 @@ export const SupabaseProvider = ({ children }) => {
   };
   //update the user profile data in public.users table
   const updateUserProfile = async (userId, updates) => {
-
     const { data, error } = await supabase
       .from("institutes_data")
       .update(updates)
       .eq("institute_id", userId)
       .select();
-    
 
     if (error) throw error;
     if (!data || data.length === 0) {
@@ -281,18 +279,19 @@ export const SupabaseProvider = ({ children }) => {
     }
   };
   const fetchInstituteAndExamData = async (user_id) => {
-
     const { data: InstituteData, error: InstituteDataError } = await supabase
       .from("institutes_data")
       .select("exam_ids")
       .eq("institute_id", user_id);
     if (InstituteDataError) throw InstituteDataError;
 
-    const examIds = [...new Set(InstituteData.flatMap(i => i.exam_ids || []))];
+    const examIds = [
+      ...new Set(InstituteData.flatMap((i) => i.exam_ids || [])),
+    ];
     const { data: ExamsData, error: ExamsDataError } = await supabase
       .from("institute_exams_data")
       .select("*")
-      .in("id", examIds)
+      .in("id", examIds);
     if (ExamsDataError) throw ExamsDataError;
 
     // const subjectIds = [...new Set(ExamsData.flatMap(i => i.subject_ids || []))];
@@ -310,7 +309,7 @@ export const SupabaseProvider = ({ children }) => {
     // if (TestPaperDataError) throw TestPaperDataError;
 
     return { ExamsData };
-  }
+  };
   // ➕ CREATE EXAM
   const createInstituteExam = async ({
     institute_id,
@@ -320,7 +319,6 @@ export const SupabaseProvider = ({ children }) => {
     icon,
     status,
   }) => {
-
     // 1️⃣ INSERT EXAM
     const { data: exam, error } = await supabase
       .from("institute_exams_data")
@@ -330,7 +328,6 @@ export const SupabaseProvider = ({ children }) => {
         language,
         icon,
         exam_status: status,
-
       })
       .select()
       .single();
@@ -347,34 +344,31 @@ export const SupabaseProvider = ({ children }) => {
 
     const existingExamIds = institute?.exam_ids || [];
 
-    if(existingExamIds.length>0){
+    if (existingExamIds.length > 0) {
       // 3️⃣ APPEND NEW EXAM ID
-    const updatedExamIds = [...new Set([...existingExamIds, exam.id])];
+      const updatedExamIds = [...new Set([...existingExamIds, exam.id])];
 
-    // 4️⃣ UPDATE institutes_data
-    const { error: updateError } = await supabase
-      .from("institutes_data")
-      .update({ exam_ids: updatedExamIds })
-      .eq("institute_id", institute_id);
+      // 4️⃣ UPDATE institutes_data
+      const { error: updateError } = await supabase
+        .from("institutes_data")
+        .update({ exam_ids: updatedExamIds })
+        .eq("institute_id", institute_id);
 
-    if (updateError) throw updateError;
-    }else{
-// 4️⃣ UPDATE institutes_data
-    const { error: updateError } = await supabase
-      .from("institutes_data")
-      .update({ exam_ids: [exam.id] })
-      .eq("institute_id", institute_id);
+      if (updateError) throw updateError;
+    } else {
+      // 4️⃣ UPDATE institutes_data
+      const { error: updateError } = await supabase
+        .from("institutes_data")
+        .update({ exam_ids: [exam.id] })
+        .eq("institute_id", institute_id);
 
-    if (updateError) throw updateError;
+      if (updateError) throw updateError;
     }
-
 
     return exam;
   };
 
-
   const fecthUpdateInstituteExamData = async (exam_id) => {
-
     // 1️⃣ fetch Updated EXAM
     const { data: exam, error } = await supabase
       .from("institute_exams_data")
@@ -385,7 +379,6 @@ export const SupabaseProvider = ({ children }) => {
     return exam;
   };
   const updateInstituteExam = async ({
-
     exam_id,
     exam_name,
     category,
@@ -393,7 +386,6 @@ export const SupabaseProvider = ({ children }) => {
     icon,
     status,
   }) => {
-
     // 1️⃣ Update EXAM
     const { error } = await supabase
       .from("institute_exams_data")
@@ -403,88 +395,82 @@ export const SupabaseProvider = ({ children }) => {
         language,
         icon,
         exam_status: status,
-
       })
-      .eq("id", exam_id)
-
+      .eq("id", exam_id);
 
     if (error) throw error;
-
-
-
   };
 
+  const deleteExamData = async (exam_id, institute_id) => {
+    try {
+      const { error } = await supabase.rpc("delete_exam_cascade", {
+        p_exam_id: exam_id,
+        p_institute_id: institute_id,
+      });
 
+      if (error) throw error;
 
-const deleteExamData = async (exam_id, institute_id) => {
-  try {
-    const { error } = await supabase.rpc("delete_exam_cascade", {
-      p_exam_id: exam_id,
-      p_institute_id: institute_id,
-    });
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error("Delete Exam Error:", error.message);
-    throw error;
-  }
-};
+      return true;
+    } catch (error) {
+      console.error("Delete Exam Error:", error.message);
+      throw error;
+    }
+  };
 
   const fetchInstituteAndSubjectData = async (institute_id) => {
-
     const { data: institutes, error: institutesError } = await supabase
       .from("institutes_data")
       .select("exam_ids")
       .eq("institute_id", institute_id);
     if (institutesError) throw institutesError;
 
-    const examIds = [...new Set(institutes.flatMap(i => i.exam_ids || []))];
+    const examIds = [...new Set(institutes.flatMap((i) => i.exam_ids || []))];
     const { data: ExamsData, error: ExamsDataError } = await supabase
       .from("institute_exams_data")
       .select("subject_ids")
-      .in("id", examIds)
+      .in("id", examIds);
     if (ExamsDataError) throw ExamsDataError;
 
-    const subjectIds = [...new Set(ExamsData.flatMap(i => i.subject_ids || []))];
+    const subjectIds = [
+      ...new Set(ExamsData.flatMap((i) => i.subject_ids || [])),
+    ];
     const { data: SubjectsData, error: SubjectsDataError } = await supabase
       .from("institute_exam_subjects_data")
       .select("*")
-      .in("id", subjectIds)
+      .in("id", subjectIds);
     if (SubjectsDataError) throw SubjectsDataError;
 
     return { SubjectsData };
-  }
+  };
 
-const fetchExamsSubjectData = async (exam_id) => {
-  if (!exam_id) return { SubjectsData: [] };
+  const fetchExamsSubjectData = async (exam_id) => {
+    if (!exam_id) return { SubjectsData: [] };
 
-  // 1️⃣ Get subject_ids
-  const { data: exam, error: examError } = await supabase
-    .from("institute_exams_data")
-    .select("subject_ids")
-    .eq("id", exam_id)
-    .single();
+    // 1️⃣ Get subject_ids
+    const { data: exam, error: examError } = await supabase
+      .from("institute_exams_data")
+      .select("subject_ids")
+      .eq("id", exam_id)
+      .single();
 
-  if (examError) throw examError;
+    if (examError) throw examError;
 
-  const subjectIds = exam?.subject_ids || [];
+    const subjectIds = exam?.subject_ids || [];
 
-  if (subjectIds.length === 0) {
-    return { SubjectsData: [] };
-  }
+    if (subjectIds.length === 0) {
+      return { SubjectsData: [] };
+    }
 
-  // 2️⃣ Fetch subjectsData details
-  const { data: SubjectsData, error: subjectsDataError } = await supabase
-    .from("institute_exam_subjects_data")
-    .select("*")
-    .in("id", subjectIds);
+    // 2️⃣ Fetch subjectsData details
+    const { data: SubjectsData, error: subjectsDataError } = await supabase
+      .from("institute_exam_subjects_data")
+      .select("*")
+      .in("id", subjectIds);
 
-  if (subjectsDataError) throw subjectsDataError;
+    if (subjectsDataError) throw subjectsDataError;
 
-  return { SubjectsData };
-};
+    return { SubjectsData };
+  };
 
   const createInstituteSubjectWithChapters = async (payload, exam_id) => {
     try {
@@ -508,7 +494,9 @@ const fetchExamsSubjectData = async (exam_id) => {
       const existingSubjectIds = exams?.subject_ids || [];
 
       // 3️⃣ APPEND NEW Subject ID
-      const updatedSubjectIds = [...new Set([...existingSubjectIds, subjectData.id])];
+      const updatedSubjectIds = [
+        ...new Set([...existingSubjectIds, subjectData.id]),
+      ];
 
       // 4️⃣ UPDATE institute_exams_data table
       const { error: updateError } = await supabase
@@ -518,7 +506,6 @@ const fetchExamsSubjectData = async (exam_id) => {
 
       if (updateError) throw updateError;
 
-      
       return subjectData;
     } catch (err) {
       console.error("Create Subject Error:", err.message);
@@ -527,7 +514,6 @@ const fetchExamsSubjectData = async (exam_id) => {
   };
 
   const fecthUpdateInstituteExamSubjectData = async (subject_id) => {
-
     // 1️⃣ fetch Updated Subject
     const { data: updatedSubject, error } = await supabase
       .from("institute_exam_subjects_data")
@@ -537,98 +523,98 @@ const fetchExamsSubjectData = async (exam_id) => {
     if (error) throw error;
     return updatedSubject;
   };
-  const updateInstituteExamSubject = async (
-
-    subject_id,
-    payload
-  ) => {
-
+  const updateInstituteExamSubject = async (subject_id, payload) => {
     // 1️⃣ Update EXAM
     const { error } = await supabase
       .from("institute_exam_subjects_data")
       .update([payload])
-      .eq("id", subject_id)
+      .eq("id", subject_id);
 
     if (error) throw error;
-
   };
 
+  const deleteExamAndSubjectData = async (subject_id) => {
+    try {
+      const { error } = await supabase.rpc("delete_subject_cascade", {
+        p_subject_id: subject_id,
+      });
 
-const deleteExamAndSubjectData = async (subject_id) => {
-  try {
-    const { error } = await supabase.rpc("delete_subject_cascade", {
-      p_subject_id: subject_id,
-    });
+      if (error) throw error;
 
-    if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Delete Subject Error:", error.message);
+      throw error;
+    }
+  };
 
-    return true;
-  } catch (error) {
-    console.error("Delete Subject Error:", error.message);
-    throw error;
-  }
-};
-
-const fetchTestpaperIdAndName = async (user_id) => {
-
+  const fetchTestpaperIdAndName = async (user_id) => {
     const { data: InstituteData, error: InstituteDataError } = await supabase
       .from("institutes_data")
       .select("exam_ids")
       .eq("institute_id", user_id);
     if (InstituteDataError) throw InstituteDataError;
 
-    const examIds = [...new Set(InstituteData.flatMap(i => i.exam_ids || []))];
+    const examIds = [
+      ...new Set(InstituteData.flatMap((i) => i.exam_ids || [])),
+    ];
     const { data: ExamsData, error: ExamsDataError } = await supabase
       .from("institute_exams_data")
       .select("subject_ids")
-      .in("id", examIds)
+      .in("id", examIds);
     if (ExamsDataError) throw ExamsDataError;
 
-    const subjectIds = [...new Set(ExamsData.flatMap(i => i.subject_ids || []))];
+    const subjectIds = [
+      ...new Set(ExamsData.flatMap((i) => i.subject_ids || [])),
+    ];
     const { data: SubjectsData, error: SubjectsDataError } = await supabase
       .from("institute_exam_subjects_data")
       .select("subject_test_paper_ids")
-      .in("id", subjectIds)
+      .in("id", subjectIds);
     if (SubjectsDataError) throw SubjectsDataError;
 
-    const TestPaperIds = [...new Set(SubjectsData.flatMap(i => i.subject_test_paper_ids || []))];
+    const TestPaperIds = [
+      ...new Set(SubjectsData.flatMap((i) => i.subject_test_paper_ids || [])),
+    ];
     const { data: TestPapersData, error: TestPaperDataError } = await supabase
       .from("subject_test_paper_data")
-      .select("id,test_paper_name")
-      .in("id", TestPaperIds)
+      .select(
+        "id,test_paper_name,total_time_per_test_paper_in_minute,total_marks,total_questions_per_test_paper",
+      )
+      .in("id", TestPaperIds);
     if (TestPaperDataError) throw TestPaperDataError;
 
-    return {SubjectsData, TestPapersData };
-  }
+    return { SubjectsData, TestPapersData };
+  };
 
-const fetchSubjectsTestPapersData = async (subject_id) => {
-  if (!subject_id) return { TestPapersData: [] };
+  const fetchSubjectsTestPapersData = async (subject_id) => {
+    if (!subject_id) return { TestPapersData: [] };
 
-  // 1️⃣ Get subject_test_paper_ids
-  const { data: subject, error: subjectError } = await supabase
-    .from("institute_exam_subjects_data")
-    .select("subject_test_paper_ids")
-    .eq("id", subject_id)
-    .single();
+    // 1️⃣ Get subject_test_paper_ids
+    const { data: subject, error: subjectError } = await supabase
+      .from("institute_exam_subjects_data")
+      .select("subject_test_paper_ids")
+      .eq("id", subject_id)
+      .single();
 
-  if (subjectError) throw subjectError;
+    if (subjectError) throw subjectError;
 
-  const testpaperIds = subject?.subject_test_paper_ids || [];
+    const testpaperIds = subject?.subject_test_paper_ids || [];
 
-  if (testpaperIds.length === 0) {
-    return { TestPapersData: [] };
-  }
+    if (testpaperIds.length === 0) {
+      return { TestPapersData: [] };
+    }
 
-  // 2️⃣ Fetch testpaper details
-  const { data: TestPapersData, error: testpaperError } = await supabase
-    .from("subject_test_paper_data")
-    .select("*")
-    .in("id", testpaperIds);
+    // 2️⃣ Fetch testpaper details
+    const { data: TestPapersData, error: testpaperError } = await supabase
+      .from("subject_test_paper_data")
+      .select("*")
+      .in("id", testpaperIds);
 
-  if (testpaperError) throw testpaperError;
+    if (testpaperError) throw testpaperError;
 
-  return { TestPapersData };
-};
+    return { TestPapersData };
+  };
 
   const createTestpaperForSubject = async (payload, subject_id) => {
     try {
@@ -649,10 +635,13 @@ const fetchSubjectsTestPapersData = async (subject_id) => {
 
       if (fetchError) throw fetchError;
 
-      const existingSubjectTestpaperIds = testpaperIds?.subject_test_paper_ids || [];
+      const existingSubjectTestpaperIds =
+        testpaperIds?.subject_test_paper_ids || [];
 
       // 3️⃣ APPEND NEW Subject ID
-      const updatedSubjectTestpaperIds = [...new Set([...existingSubjectTestpaperIds, TestpaperData.id])];
+      const updatedSubjectTestpaperIds = [
+        ...new Set([...existingSubjectTestpaperIds, TestpaperData.id]),
+      ];
 
       // 4️⃣ UPDATE Test Paper Ids in institute_exam_subjects_data table
       const { error: updateError } = await supabase
@@ -662,15 +651,15 @@ const fetchSubjectsTestPapersData = async (subject_id) => {
 
       if (updateError) throw updateError;
 
-      
       return TestpaperData;
     } catch (err) {
       console.error("Create Subject Error:", err.message);
       throw err;
     }
   };
-  const fecthUpdateInstituteExamSubjectTestpaperData = async (test_paper_id) => {
-
+  const fecthUpdateInstituteExamSubjectTestpaperData = async (
+    test_paper_id,
+  ) => {
     // 1️⃣ fetch Updated Subject
     const { data: updatedTestpaper, error } = await supabase
       .from("subject_test_paper_data")
@@ -680,85 +669,78 @@ const fetchSubjectsTestPapersData = async (subject_id) => {
     if (error) throw error;
     return updatedTestpaper;
   };
-const updateInstituteExamSubjectTestpaper = async (
-
+  const updateInstituteExamSubjectTestpaper = async (
     test_paper_id,
-    payload
+    payload,
   ) => {
-
     // 1️⃣ Update EXAM
     const { error } = await supabase
       .from("subject_test_paper_data")
       .update([payload])
-      .eq("id", test_paper_id)
+      .eq("id", test_paper_id);
 
     if (error) throw error;
-
   };
 
-
-const deleteSubjectAndTestpaperData = async (test_paper_id) => {
-  try {
-    const { error } = await supabase.rpc("delete_testpaper_cascade", {
-      p_test_paper_id: test_paper_id,
-    });
-
-    if (error) throw error;
-
-    return true;
-  } catch (error) {
-    console.error("Delete Testpaper Error:", error.message);
-    throw error;
-  }
-};
-
-const createQuestionForTestpaper = async (payload) => {
+  const deleteSubjectAndTestpaperData = async (test_paper_id) => {
     try {
-      const safePayload = {
-      ...payload,
-      options: Array.isArray(payload.options) ? payload.options : [],
-      correct_option_s: Array.isArray(payload.correct_option_s)
-        ? payload.correct_option_s
-        : [payload.correct_option_s],
-    };
-      const { error, data: QuestionData } = await supabase
-        .from("subject_test_paper_questions")
-        .insert(safePayload)
-        
+      const { error } = await supabase.rpc("delete_testpaper_cascade", {
+        p_test_paper_id: test_paper_id,
+      });
 
       if (error) throw error;
-      
-      
+
+      return true;
+    } catch (error) {
+      console.error("Delete Testpaper Error:", error.message);
+      throw error;
+    }
+  };
+
+  const createQuestionForTestpaper = async (payload) => {
+    try {
+      const safePayload = {
+        ...payload,
+        options: Array.isArray(payload.options) ? payload.options : [],
+        correct_option_s: Array.isArray(payload.correct_option_s)
+          ? payload.correct_option_s
+          : [payload.correct_option_s],
+      };
+      const { error, data: QuestionData } = await supabase
+        .from("subject_test_paper_questions")
+        .insert(safePayload);
+
+      if (error) throw error;
+
       return QuestionData;
     } catch (err) {
       console.error("Create Subject Error:", err.message);
       throw err;
     }
   };
- const fetchSubjectsTestPapersQuestionsData = async (test_paper_id) => {
-
+  const fetchSubjectsTestPapersQuestionsData = async (test_paper_id) => {
     const { data: QuestionsData, error: QuestionsDataError } = await supabase
       .from("subject_test_paper_questions")
       .select("*")
-      .eq("test_paper_id", test_paper_id)
+      .eq("test_paper_id", test_paper_id);
     if (QuestionsDataError) throw QuestionsDataError;
 
     return { QuestionsData };
-  }
+  };
 
-const fetchAllQuestionsData = async (test_paper_ids) => {
-
+  const fetchAllQuestionsData = async (test_paper_ids) => {
     const { data: QuestionsData, error: QuestionsDataError } = await supabase
       .from("subject_test_paper_questions")
       .select("q_id")
-      .in("test_paper_id", test_paper_ids)
+      .in("test_paper_id", test_paper_ids);
     if (QuestionsDataError) throw QuestionsDataError;
 
     return { QuestionsData };
-  }
+  };
 
-const fecthUpdateInstituteExamSubjectTestpaperQuestionData = async (question_id) => {
-
+  const fecthUpdateInstituteExamSubjectTestpaperQuestionData = async (
+    question_id,
+  ) => {
     // 1️⃣ fetch Updated Subject
     const { data: updatedQuestion, error } = await supabase
       .from("subject_test_paper_questions")
@@ -769,137 +751,171 @@ const fecthUpdateInstituteExamSubjectTestpaperQuestionData = async (question_id)
     return updatedQuestion;
   };
 
-const updateInstituteExamSubjectTestpaperQuestionData = async (payload) => {
-  if (!payload.q_id) throw new Error("Missing q_id");
+  const updateInstituteExamSubjectTestpaperQuestionData = async (payload) => {
+    if (!payload.q_id) throw new Error("Missing q_id");
 
-  const safePayload = {
-    question_text: payload.question_text,
-    options: payload.options ?? [],
-    question_instruction: payload.question_instruction,
-    correct_option_s: payload.correct_option_s ?? [],
-    positive_mark: Number(payload.positive_mark),
-    negative_mark: Number(payload.negative_mark),
-    expected_time_for_each_question: Number(payload.expected_time_for_each_question),
-    chapter_name: payload.chapter_name,
-    topic_name: payload.topic_name,
+    const safePayload = {
+      question_text: payload.question_text,
+      options: payload.options ?? [],
+      question_instruction: payload.question_instruction,
+      correct_option_s: payload.correct_option_s ?? [],
+      positive_mark: Number(payload.positive_mark),
+      negative_mark: Number(payload.negative_mark),
+      expected_time_for_each_question: Number(
+        payload.expected_time_for_each_question,
+      ),
+      chapter_name: payload.chapter_name,
+      topic_name: payload.topic_name,
+    };
+
+    const { error } = await supabase
+      .from("subject_test_paper_questions")
+      .update(safePayload)
+      .eq("q_id", payload.q_id);
+
+    if (error) throw error;
   };
 
-  const { error } = await supabase
-    .from("subject_test_paper_questions")
-    .update(safePayload)
-    .eq("q_id", payload.q_id);
+  const deleteSubjectAndTestpaperQuestionData = async (question_id) => {
+    if (!question_id) return;
 
-  if (error) throw error;
-};
+    try {
+      /* 5️⃣ Delete Testpaper row */
+      const { error: questionsDeleteError } = await supabase
+        .from("subject_test_paper_questions")
+        .delete()
+        .eq("q_id", question_id);
 
+      if (questionsDeleteError) throw questionsDeleteError;
 
+      return true;
+    } catch (error) {
+      console.error("Delete Subject Cascade Error:", error.message);
+      throw error;
+    }
+  };
 
-const deleteSubjectAndTestpaperQuestionData = async (question_id) => {
-  if (!question_id) return;
-
-  try {
-   
-
-    /* 5️⃣ Delete Testpaper row */
-    const { error: questionsDeleteError } = await supabase
-      .from("subject_test_paper_questions")
-      .delete()
-      .eq("q_id", question_id);
-
-    if (questionsDeleteError) throw questionsDeleteError;
-
-    return true;
-  } catch (error) {
-    console.error("Delete Subject Cascade Error:", error.message);
-    throw error;
-  }
-};
-
-const fetchStudentEnrollmentInfo = async(institute_id)=>{
-  
-const {data:enrolledInfo,error:enrolledInfoError}=await supabase
-.from("institute_pricing")
-.select("*")
-.eq("institute_id",institute_id); 
+  const fetchStudentEnrollmentInfo = async (institute_id) => {
+    const { data: enrolledInfo, error: enrolledInfoError } = await supabase
+      .from("institute_pricing")
+      .select("*")
+      .eq("institute_id", institute_id);
     if (enrolledInfoError) throw enrolledInfoError;
 
-    const student_id=enrolledInfo?.map(s=>s.user_id)
+    const student_id = enrolledInfo?.map((s) => s.user_id);
 
-
-    const {data:studentInfo,error:studentInfoError}=await supabase
-.from("users")
-.select("*")
-.in("id",student_id); 
+    const { data: studentInfo, error: studentInfoError } = await supabase
+      .from("users")
+      .select("*")
+      .in("id", student_id);
     if (studentInfoError) throw studentInfoError;
-return{
-  enrolledInfo,studentInfo
-}
-}
+    return {
+      enrolledInfo,
+      studentInfo,
+    };
+  };
 
-const fetchStudentInfo=async (student_id)=>{
-  const {data,error}=await supabase
-  .from("users")
-  .select("id,full_name,profile_image")
-  .eq("id",student_id);
+  const fetchStudentInfo = async (student_id) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id,full_name,profile_image")
+      .eq("id", student_id);
 
-  if(error) throw error;
-  return data;
-}
-const fetchExamInfo=async (exam_id)=>{
-  const {data,error}=await supabase
-  .from("institute_exams_data")
-  .select("exam_title,exam_category,language,exam_status")
-  .eq("id",exam_id);
+    if (error) throw error;
+    return data;
+  };
+  const fetchExamInfo = async (exam_id) => {
+    const { data, error } = await supabase
+      .from("institute_exams_data")
+      .select("exam_title,exam_category,language,exam_status")
+      .eq("id", exam_id);
 
-  if(error) throw error;
-  return data;
-}
-const fecthSubjectInfo=async (subject_id)=>{
-  const {data,error}=await supabase
-  .from("institute_exam_subjects_data")
-  .select("subject_name,total_chapters,chapters_and_topics_name")
-  .eq("id",subject_id);
+    if (error) throw error;
+    return data;
+  };
+  const fecthSubjectInfo = async (subject_id) => {
+    const { data, error } = await supabase
+      .from("institute_exam_subjects_data")
+      .select("subject_name,total_chapters,chapters_and_topics_name")
+      .eq("id", subject_id);
 
-  if(error) throw error;
-  return data;
-}
-const fetchTestPaperInfo=async (test_paper_ids)=>{
-  const {data,error}=await supabase
-  .from("subject_test_paper_data")
-  .select("test_paper_name,test_paper_description,test_paper_rules,test_paper_marking_scheme,total_time_per_test_paper_in_minute,total_questions_per_test_paper,total_marks,passing_mark,test_paper_status")
-  .in("id",test_paper_ids);
+    if (error) throw error;
+    return data;
+  };
+  const fetchTestPaperInfo = async (test_paper_ids) => {
+    const { data, error } = await supabase
+      .from("subject_test_paper_data")
+      .select(
+        "test_paper_name,test_paper_description,test_paper_rules,test_paper_marking_scheme,total_time_per_test_paper_in_minute,total_questions_per_test_paper,total_marks,passing_mark,test_paper_status",
+      )
+      .in("id", test_paper_ids);
 
-  if(error) throw error;
-  return data;
-}
-const fetchInstituteData=async (institute_id)=>{
-  const {data,error}=await supabase
-  .from("institutes_data")
-  .select("institute_name,profile_image")
-  .eq("institute_id",institute_id);
+    if (error) throw error;
+    return data;
+  };
+  const fetchInstituteData = async (institute_id) => {
+    const { data, error } = await supabase
+      .from("institutes_data")
+      .select("institute_name,profile_image")
+      .eq("institute_id", institute_id);
 
-  if(error) throw error;
-  return data;
-}
+    if (error) throw error;
+    return data;
+  };
   /* ---------------------------------------------
      CONTEXT VALUE
   --------------------------------------------- */
   const value = {
-    user, session, loading, signupInstitute, loginUser, logoutUser, resetPassword,
+    user,
+    session,
+    loading,
+    signupInstitute,
+    loginUser,
+    logoutUser,
+    resetPassword,
 
-    fetchNotifications, markAllNotificationsRead, markSingleNotificationsRead, clearNotifications, fetchUserProfile, uploadProfileImage, updateUserProfile,
+    fetchNotifications,
+    markAllNotificationsRead,
+    markSingleNotificationsRead,
+    clearNotifications,
+    fetchUserProfile,
+    uploadProfileImage,
+    updateUserProfile,
 
-    fetchInstituteAndExamData, createInstituteExam, fecthUpdateInstituteExamData, updateInstituteExam, deleteExamData,
+    fetchInstituteAndExamData,
+    createInstituteExam,
+    fecthUpdateInstituteExamData,
+    updateInstituteExam,
+    deleteExamData,
 
-    fetchInstituteAndSubjectData,fetchExamsSubjectData, createInstituteSubjectWithChapters,fecthUpdateInstituteExamSubjectData,updateInstituteExamSubject, deleteExamAndSubjectData,
+    fetchInstituteAndSubjectData,
+    fetchExamsSubjectData,
+    createInstituteSubjectWithChapters,
+    fecthUpdateInstituteExamSubjectData,
+    updateInstituteExamSubject,
+    deleteExamAndSubjectData,
 
-    fetchSubjectsTestPapersData, createTestpaperForSubject ,fecthUpdateInstituteExamSubjectTestpaperData,updateInstituteExamSubjectTestpaper,deleteSubjectAndTestpaperData,
+    fetchSubjectsTestPapersData,
+    createTestpaperForSubject,
+    fecthUpdateInstituteExamSubjectTestpaperData,
+    updateInstituteExamSubjectTestpaper,
+    deleteSubjectAndTestpaperData,
 
-    fetchTestpaperIdAndName, fetchSubjectsTestPapersQuestionsData,createQuestionForTestpaper,fecthUpdateInstituteExamSubjectTestpaperQuestionData,updateInstituteExamSubjectTestpaperQuestionData,deleteSubjectAndTestpaperQuestionData,
-  
-    fetchStudentEnrollmentInfo,fetchAllQuestionsData,
+    fetchTestpaperIdAndName,
+    fetchSubjectsTestPapersQuestionsData,
+    createQuestionForTestpaper,
+    fecthUpdateInstituteExamSubjectTestpaperQuestionData,
+    updateInstituteExamSubjectTestpaperQuestionData,
+    deleteSubjectAndTestpaperQuestionData,
 
-    fetchStudentInfo,fetchExamInfo,fecthSubjectInfo,fetchTestPaperInfo,fetchInstituteData,
+    fetchStudentEnrollmentInfo,
+    fetchAllQuestionsData,
+
+    fetchStudentInfo,
+    fetchExamInfo,
+    fecthSubjectInfo,
+    fetchTestPaperInfo,
+    fetchInstituteData,
   };
 
   return (
@@ -908,7 +924,6 @@ const fetchInstituteData=async (institute_id)=>{
     </SupabaseContext.Provider>
   );
 };
-
 
 /* ---------------------------------------------
    3. Custom Hook

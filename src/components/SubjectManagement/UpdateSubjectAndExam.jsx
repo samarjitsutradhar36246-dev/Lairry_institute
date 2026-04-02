@@ -24,14 +24,7 @@ export default function UpdateSubjectAndExam() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false); // ✅ added
-  const [chapters, setChapters] = useState([
-    {
-      className: "",
-      chapterName: "",
-      topics: "",
-      chapterType: "",
-    },
-  ]);
+  const [chapters, setChapters] = useState([]);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -39,10 +32,7 @@ export default function UpdateSubjectAndExam() {
   });
 
   const addChapter = () => {
-    setChapters((prev) => [
-      ...prev,
-      { className: "", chapterName: "", topics: "", chapterType: "" },
-    ]);
+    setChapters((prev) => [...prev, { chapterName: "", topics: "" }]);
   };
 
   const updateChapter = (index, key, value) => {
@@ -56,7 +46,7 @@ export default function UpdateSubjectAndExam() {
     total_chapter: "",
     description: "",
     icon: "",
-    status: "Active",
+    status: "Deactive",
   });
 
   const handleChange = (key, value) => {
@@ -67,7 +57,20 @@ export default function UpdateSubjectAndExam() {
     try {
       setLoading(true);
       const data = await fecthUpdateInstituteExamSubjectData(subject_id);
-      console.log(data);
+      const flatChapters = [];
+      data.chapters_and_topics_name?.forEach((group) => {
+        console.log(group);
+        flatChapters.push({
+          chapterName: group.chapter_name || "",
+          topics: (group.topics || []).join(", "),
+        });
+        // group.chapters.map((ch) => {
+
+        // });
+      });
+
+      setChapters(flatChapters);
+      console.log(chapters);
       setFormData({
         subject_name: data.subject_name || "",
         total_chapter: data.total_chapters?.toString() || "",
@@ -76,19 +79,6 @@ export default function UpdateSubjectAndExam() {
         status: data.subject_status || "Active",
       });
       console.log(formData);
-      const flatChapters = [];
-      data.chapters_and_topics_name?.forEach((group) => {
-        group.chapters.forEach((ch) => {
-          flatChapters.push({
-            className: group.class || "",
-            chapterName: ch.chapter_name || "",
-            topics: (ch.topics || []).join(", "),
-            chapterType: group.chapter_type || "",
-          });
-        });
-      });
-
-      setChapters(flatChapters);
     } catch (err) {
       setSnackbar({
         open: true,
@@ -117,7 +107,6 @@ export default function UpdateSubjectAndExam() {
 
   // ✅ per-chapter errors
   const chapterErrors = (index) => ({
-    className: touched && !chapters[index]?.className.trim(),
     chapterName: touched && !chapters[index]?.chapterName.trim(),
     topics: touched && !chapters[index]?.topics.trim(),
   });
@@ -165,14 +154,7 @@ export default function UpdateSubjectAndExam() {
     }
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-      if (!ch.className.trim()) {
-        setSnackbar({
-          open: true,
-          message: `Class is required in Chapter ${i + 1} ❌`,
-          severity: "error",
-        });
-        return false;
-      }
+
       if (!ch.chapterName.trim()) {
         setSnackbar({
           open: true,
@@ -194,23 +176,13 @@ export default function UpdateSubjectAndExam() {
   };
 
   const buildChapterPayload = () => {
-    const grouped = {};
-    chapters.forEach((ch) => {
-      if (!grouped[ch.className]) {
-        grouped[ch.className] = { class: ch.className, chapters: [] };
-        if (ch.chapterType?.trim()) {
-          grouped[ch.className].chapter_type = ch.chapterType.trim();
-        }
-      }
-      grouped[ch.className].chapters.push({
-        chapter_name: ch.chapterName,
-        topics: ch.topics
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      });
-    });
-    return Object.values(grouped);
+    return chapters.map((ch) => ({
+      chapter_name: ch.chapterName,
+      topics: ch.topics
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+    }));
   };
 
   const isFormIncomplete =
@@ -219,10 +191,7 @@ export default function UpdateSubjectAndExam() {
     !formData.description.trim() ||
     !formData.icon ||
     chapters.length === 0 ||
-    chapters.some(
-      (ch) =>
-        !ch.className.trim() || !ch.chapterName.trim() || !ch.topics.trim(),
-    );
+    chapters.some((ch) => !ch.chapterName.trim() || !ch.topics.trim());
 
   return (
     <div className="relative min-h-screen bg-[var(--bg-default)] text-[var(--text-primary)] font-manrope overflow-hidden ml-5">
@@ -366,12 +335,14 @@ export default function UpdateSubjectAndExam() {
                     Add chapters under this subject
                   </p>
                 </div>
-                <button
-                  onClick={addChapter}
-                  className="w-10 h-10 flex items-center justify-center rounded-lg bg-[var(--primary)] hover:bg-[var(--secondary)] transition font-bold text-xl"
-                  title="Add Chapter">
-                  +
-                </button>
+                {chapters.length === 0 && (
+                  <button
+                    onClick={addChapter}
+                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-[var(--primary)] hover:bg-[var(--secondary)] transition font-bold text-xl"
+                    title="Add Chapter">
+                    +
+                  </button>
+                )}
               </div>
 
               {/* ✅ Show error if no chapters */}
@@ -392,19 +363,6 @@ export default function UpdateSubjectAndExam() {
 
                     <TwoCol>
                       <TextField
-                        label="Class"
-                        value={chapter.className}
-                        onChange={(e) =>
-                          updateChapter(index, "className", e.target.value)
-                        }
-                        error={chapterErrors(index).className} // ✅
-                        helperText={
-                          chapterErrors(index).className
-                            ? "Class is required"
-                            : ""
-                        }
-                      />
-                      <TextField
                         label="Chapter Name"
                         value={chapter.chapterName}
                         onChange={(e) =>
@@ -417,9 +375,6 @@ export default function UpdateSubjectAndExam() {
                             : ""
                         }
                       />
-                    </TwoCol>
-
-                    <TwoCol>
                       <TextField
                         label="Topics"
                         value={chapter.topics}
@@ -434,16 +389,9 @@ export default function UpdateSubjectAndExam() {
                             : ""
                         }
                       />
-                      <TextField
-                        label="Chapter Type (optional)"
-                        value={chapter.chapterType}
-                        onChange={(e) =>
-                          updateChapter(index, "chapterType", e.target.value)
-                        }
-                      />
                     </TwoCol>
 
-                    <div className="items-center pt-5 justify-center">
+                    <div className="flex justify-center gap-4 pt-5 ">
                       <button
                         onClick={() =>
                           setChapters((prev) =>
@@ -452,6 +400,11 @@ export default function UpdateSubjectAndExam() {
                         }
                         className="text-xs text-[var(--error-color)] hover:opacity-80 mt-2">
                         Remove Chapter
+                      </button>
+                      <button
+                        onClick={addChapter}
+                        className="text-xs text-[var(--primary)] hover:opacity-80 mt-2">
+                        + Add Chapter
                       </button>
                     </div>
                   </div>

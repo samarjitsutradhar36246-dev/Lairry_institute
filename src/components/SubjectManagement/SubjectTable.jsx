@@ -64,16 +64,14 @@ const SubjectTable = ({
     subjects.forEach((subject) => {
       if (selectedSubject !== "All" && subject.subject_name !== selectedSubject)
         return;
-
+      console.log(subject.chapters_and_topics_name);
       subject.chapters_and_topics_name?.forEach((classes) => {
-        classes.chapters?.forEach((chapter) => {
-          data.push({
-            className: classes.class,
-            subjectName: subject.subject_name,
-            chapterName: chapter.chapter_name,
-            topics: chapter.topics,
-            status: subject.subject_status,
-          });
+        //console.log(classes.chapters.map((c) => c.chapter_name));
+        data.push({
+          subjectName: subject.subject_name,
+          chapterName: classes.chapter_name,
+          topics: classes.topics,
+          status: subject.subject_status,
         });
       });
     });
@@ -85,7 +83,8 @@ const SubjectTable = ({
     chapterPage * chapterRowsPerPage,
     chapterPage * chapterRowsPerPage + chapterRowsPerPage,
   );
-
+  console.log(flattenedChapters);
+  console.log(paginatedChapters);
   return (
     <GlassCard>
       <ConfirmDialog />
@@ -270,31 +269,26 @@ const SubjectTable = ({
           <Table>
             <TableHead>
               <TableRow>
-                {[
-                  "Class",
-                  "Subject Name",
-                  "Chapter Name",
-                  "Topics",
-                  "Status",
-                ].map((h) => (
-                  <TableCell
-                    key={h}
-                    sx={(theme) => ({
-                      color: theme.palette.text.secondary,
-                      textTransform: "uppercase",
-                      fontSize: 12,
-                      fontWeight: 600,
-                    })}>
-                    {h}
-                  </TableCell>
-                ))}
+                {["Subject Name", "Chapter Name", "Topics", "Status"].map(
+                  (h) => (
+                    <TableCell
+                      key={h}
+                      sx={(theme) => ({
+                        color: theme.palette.text.secondary,
+                        textTransform: "uppercase",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      })}>
+                      {h}
+                    </TableCell>
+                  ),
+                )}
               </TableRow>
             </TableHead>
 
             <TableBody>
               {paginatedChapters.map((row, index) => (
                 <TableRow key={index} hover>
-                  <TableCell>{row.className}</TableCell>
                   <TableCell>{row.subjectName}</TableCell>
                   <TableCell>{row.chapterName}</TableCell>
                   <TableCell>

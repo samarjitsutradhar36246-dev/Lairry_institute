@@ -68,7 +68,7 @@ export default function Subjects() {
       } catch (error) {
         setSnackbar({
           open: true,
-          message: err.message || "Subjects Data Fetching Error ❌",
+          message: error.message || "Subjects Data Fetching Error ❌",
           severity: "error",
         });
       } finally {
